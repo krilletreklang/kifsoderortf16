@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+  --font-heading: "Avenir Next Condensed", "Franklin Gothic Medium", "Arial Narrow", sans-serif;
+  --font-body: "Avenir Next", "Segoe UI", "Noto Sans", sans-serif;
+  --background: #090909;
+  --panel: #161616;
+  --panel-elevated: #1f1f1f;
+  --foreground: #f8f8f8;
+  --muted: #a5a5a5;
+  --accent: #c8a443;
+  --accent-soft: #8c7430;
+  --border: #2f2f2f;
+  --danger: #b94a48;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-panel: var(--panel);
+  --color-panel-elevated: var(--panel-elevated);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-border: var(--border);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-body);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading), sans-serif;
+  letter-spacing: 0.02em;
+}
+
+* {
+  border-color: var(--border);
+}
