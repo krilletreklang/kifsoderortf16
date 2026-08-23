@@ -1,24 +1,9 @@
-"use client";
-
-import Image from "next/image";
+import { ClubLogo } from "@/components/ui/club-logo";
 
 export function Logo() {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border bg-panel-elevated p-3">
-      <div className="relative h-10 w-10 overflow-hidden rounded-md border border-border bg-black">
-        <Image
-          src="/kif-soderort-logo.png"
-          alt="KIF Söderort logotyp"
-          fill
-          sizes="40px"
-          className="object-contain"
-          onError={(event) => {
-            const target = event.currentTarget;
-            target.style.display = "none";
-          }}
-        />
-        <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-accent">KIF</span>
-      </div>
+      <ClubLogo className="h-12 w-16" imageClassName="object-cover" fallbackText="KIF" />
       <div>
         <p className="text-xs uppercase tracking-wide text-muted">KIF Söderort</p>
         <p className="text-2xl leading-none text-foreground">F16 Coach</p>
