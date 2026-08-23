@@ -15,7 +15,7 @@ export function NextMatchCard({ match }: NextMatchCardProps) {
   if (!match) {
     return (
       <Card>
-        <h2 className="text-xl text-foreground">Nasta match</h2>
+        <h2 className="text-xl text-foreground">Nästa match</h2>
         <p className="mt-2 text-sm text-muted">Ingen kommande match planerad.</p>
       </Card>
     );
@@ -23,7 +23,7 @@ export function NextMatchCard({ match }: NextMatchCardProps) {
 
   return (
     <Card>
-      <h2 className="text-xl text-foreground">Nasta match</h2>
+      <h2 className="text-xl text-foreground">Nästa match</h2>
       <p className="mt-2 text-sm text-muted">{formatDate(match.date)}</p>
       <p className="text-2xl text-foreground">vs {match.opponent}</p>
       <p className="mt-1 text-sm text-muted">

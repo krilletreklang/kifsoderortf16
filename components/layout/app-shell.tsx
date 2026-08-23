@@ -22,7 +22,7 @@ export function AppShell({ userEmail, teamLabel, onLogout, children }: AppShellP
           </div>
         </aside>
         <div className="flex min-h-screen flex-1 flex-col pb-20 lg:pb-0">
-          <Topbar title="Soderort F16" subtitle={teamLabel} userEmail={userEmail} onLogout={onLogout} />
+          <Topbar title="Söderort F16" subtitle={teamLabel} userEmail={userEmail} onLogout={onLogout} />
           <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-4 lg:px-6 lg:py-6">{children}</main>
         </div>
       </div>

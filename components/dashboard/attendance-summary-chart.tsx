@@ -14,7 +14,7 @@ export function AttendanceSummaryChart({ data }: AttendanceSummaryChartProps) {
   return (
     <Card className="h-80">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl text-foreground">Narvaro senaste passen</h2>
+        <h2 className="text-xl text-foreground">Närvaro senaste passen</h2>
         <span className="text-sm text-muted">30 dagar</span>
       </div>
       <ResponsiveContainer width="100%" height="85%">

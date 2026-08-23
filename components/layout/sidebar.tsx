@@ -8,13 +8,13 @@ import { cn } from "@/lib/utils/cn";
 const navigation = [
   { href: "/", label: "Dashboard", icon: Gauge },
   { href: "/players", label: "Spelare", icon: Users },
-  { href: "/trainings", label: "Traningar", icon: CalendarDays },
+  { href: "/trainings", label: "Träningar", icon: CalendarDays },
   { href: "/matches", label: "Matcher", icon: ShieldCheck },
-  { href: "/training-plans", label: "Traningsplaner", icon: ClipboardList },
-  { href: "/drills", label: "Ovningar", icon: Drill },
+  { href: "/training-plans", label: "Träningsplaner", icon: ClipboardList },
+  { href: "/drills", label: "Övningar", icon: Drill },
   { href: "/tactics", label: "Taktiktavla", icon: LayoutGrid },
   { href: "/statistics", label: "Statistik", icon: BarChart3 },
-  { href: "/settings", label: "Installningar", icon: Settings },
+  { href: "/settings", label: "Inställningar", icon: Settings },
 ] as const;
 
 export function Sidebar() {

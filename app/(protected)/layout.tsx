@@ -19,7 +19,7 @@ export default async function ProtectedLayout({ children }: LayoutProps<"/">) {
       ) : (
         <EmptyState
           title="Konto saknar lagkoppling"
-          description="Be en admin att lagga till dig i team_members for att fa access till lagets data."
+          description="Be en admin att lägga till dig i team_members för att få access till lagets data."
         />
       )}
     </AppShell>

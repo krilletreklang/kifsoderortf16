@@ -34,7 +34,7 @@ export function LoginForm({ action }: LoginFormProps) {
 
       <div>
         <label htmlFor="password" className="mb-1 block text-sm text-muted">
-          Losenord
+          Lösenord
         </label>
         <input
           id="password"

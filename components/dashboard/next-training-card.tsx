@@ -14,15 +14,15 @@ export function NextTrainingCard({ training }: NextTrainingCardProps) {
   if (!training) {
     return (
       <Card>
-        <h2 className="text-xl text-foreground">Nasta traning</h2>
-        <p className="mt-2 text-sm text-muted">Ingen framtida traning planerad.</p>
+        <h2 className="text-xl text-foreground">Nästa träning</h2>
+        <p className="mt-2 text-sm text-muted">Ingen framtida träning planerad.</p>
       </Card>
     );
   }
 
   return (
     <Card>
-      <h2 className="text-xl text-foreground">Nasta traning</h2>
+      <h2 className="text-xl text-foreground">Nästa träning</h2>
       <p className="mt-2 text-sm text-muted">{formatDate(training.date)}</p>
       <p className="text-2xl text-foreground">{formatTime(training.start_time)}</p>
       <p className="mt-1 text-sm text-muted">{training.location ?? "Plats saknas"}</p>

@@ -24,7 +24,7 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Narvaro denna manad" value={`${summary.monthlyAttendance}%`} />
+        <StatCard label="Närvaro denna månad" value={`${summary.monthlyAttendance}%`} />
         <StatCard label="Matcher spelade" value={`${summary.playedMatches}`} />
         <StatCard label="Matcher kommande" value={`${summary.upcomingMatches}`} />
         <StatCard

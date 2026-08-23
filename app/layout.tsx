@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Soderort F16",
-  description: "Intern coachapp for KIF Soderort F16",
+  title: "Söderort F16",
+  description: "Intern coachapp för KIF Söderort F16",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

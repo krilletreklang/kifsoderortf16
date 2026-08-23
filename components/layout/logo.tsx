@@ -8,7 +8,7 @@ export function Logo() {
       <div className="relative h-10 w-10 overflow-hidden rounded-md border border-border bg-black">
         <Image
           src="/kif-soderort-logo.png"
-          alt="KIF Soderort logotyp"
+          alt="KIF Söderort logotyp"
           fill
           sizes="40px"
           className="object-contain"
@@ -20,7 +20,7 @@ export function Logo() {
         <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-accent">KIF</span>
       </div>
       <div>
-        <p className="text-xs uppercase tracking-wide text-muted">KIF Soderort</p>
+        <p className="text-xs uppercase tracking-wide text-muted">KIF Söderort</p>
         <p className="text-2xl leading-none text-foreground">F16 Coach</p>
       </div>
     </div>

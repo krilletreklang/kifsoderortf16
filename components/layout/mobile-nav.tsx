@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils/cn";
 const mobileNavigation = [
   { href: "/", label: "Hem", icon: Gauge },
   { href: "/players", label: "Spelare", icon: Users },
-  { href: "/trainings", label: "Traning", icon: CalendarDays },
+  { href: "/trainings", label: "Träning", icon: CalendarDays },
   { href: "/matches", label: "Matcher", icon: ShieldCheck },
 ] as const;
 

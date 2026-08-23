@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const loginSchema = z.object({
   email: z.string().email("Ange en giltig e-postadress."),
-  password: z.string().min(8, "Losenord maste vara minst 8 tecken."),
+  password: z.string().min(8, "Lösenord måste vara minst 8 tecken."),
 });
 
 export interface LoginActionState {
