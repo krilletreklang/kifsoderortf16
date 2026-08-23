@@ -21,6 +21,11 @@ const setAttendanceSchema = z.object({
   status: z.enum(["present", "absent", "late", "unknown"]),
 });
 
+const setAllAttendanceSchema = z.object({
+  trainingId: z.string().uuid(),
+  status: z.enum(["present", "absent", "late", "unknown"]),
+});
+
 function nullableString(value: FormDataEntryValue | null): string | null {
   if (!value) return null;
   const normalized = String(value).trim();
@@ -102,12 +107,21 @@ export async function setAttendanceAction(formData: FormData) {
 }
 
 export async function markAllPresentAction(formData: FormData) {
+  formData.set("status", "present");
+  return setAllAttendanceStatusAction(formData);
+}
+
+export async function setAllAttendanceStatusAction(formData: FormData) {
   const user = await requireUser();
   const membership = await getPrimaryTeamMembership(user.id);
   if (!membership) return;
 
-  const trainingId = String(formData.get("trainingId") ?? "");
-  if (!trainingId) {
+  const parsed = setAllAttendanceSchema.safeParse({
+    trainingId: String(formData.get("trainingId") ?? ""),
+    status: String(formData.get("status") ?? "present"),
+  });
+
+  if (!parsed.success) {
     return;
   }
 
@@ -116,7 +130,7 @@ export async function markAllPresentAction(formData: FormData) {
   const { data: training } = await supabase
     .from("trainings")
     .select("id")
-    .eq("id", trainingId)
+    .eq("id", parsed.data.trainingId)
     .eq("team_id", membership.team_id)
     .maybeSingle();
 
@@ -132,9 +146,9 @@ export async function markAllPresentAction(formData: FormData) {
 
   await supabase.from("training_attendance").upsert(
     players.map((player) => ({
-      training_id: trainingId,
+      training_id: parsed.data.trainingId,
       player_id: player.id,
-      status: "present" as const,
+      status: parsed.data.status,
     })),
     { onConflict: "training_id,player_id" },
   );

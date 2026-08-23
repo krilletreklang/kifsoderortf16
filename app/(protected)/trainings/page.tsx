@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -5,10 +6,10 @@ import { requireUser } from "@/lib/auth/session";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
 import { getTrainingAttendanceModel, type AttendanceStatus } from "@/lib/db/queries/trainings";
 import { formatDate, formatTime } from "@/lib/utils/date";
-import { createTrainingAction, markAllPresentAction, setAttendanceAction } from "./actions";
+import { createTrainingAction, setAllAttendanceStatusAction, setAttendanceAction } from "./actions";
 
 function statusText(status: AttendanceStatus) {
-  if (status === "present") return "Narvarande";
+  if (status === "present") return "Närvarande";
   if (status === "late") return "Sen";
   if (status === "absent") return "Frånvarande";
   return "Okänd";
@@ -16,18 +17,37 @@ function statusText(status: AttendanceStatus) {
 
 const statuses: AttendanceStatus[] = ["present", "late", "absent", "unknown"];
 
-export default async function TrainingsPage() {
+type AttendanceFilter = "all" | AttendanceStatus;
+
+interface TrainingsPageProps {
+  searchParams: Promise<{
+    trainingId?: string;
+    filter?: AttendanceFilter;
+  }>;
+}
+
+export default async function TrainingsPage({ searchParams }: TrainingsPageProps) {
   const user = await requireUser();
   const membership = await getPrimaryTeamMembership(user.id);
+  const params = await searchParams;
 
   if (!membership) {
     return <EmptyState title="Ingen lagkoppling" description="Be en admin koppla ditt konto till laget för att hantera träningar." />;
   }
 
-  const model = await getTrainingAttendanceModel(membership.team_id);
+  const model = await getTrainingAttendanceModel(membership.team_id, {
+    selectedTrainingId: params.trainingId,
+  });
+
+  const filter: AttendanceFilter = params.filter ?? "all";
+  const visiblePlayers = model.players.filter((player) => {
+    if (filter === "all") return true;
+    const currentStatus = model.attendance_by_player[player.id] ?? "unknown";
+    return currentStatus === filter;
+  });
 
   return (
-    <div className="space-y-4 lg:space-y-6">
+    <div className="space-y-4 pb-28 lg:space-y-6 lg:pb-6">
       <Card>
         <h2 className="text-2xl text-foreground">Skapa träning</h2>
         <p className="mt-1 text-sm text-muted">Planera nästa pass och registrera närvaro direkt i appen.</p>
@@ -55,14 +75,23 @@ export default async function TrainingsPage() {
           ) : (
             <ul className="space-y-2">
               {model.trainings.map((training) => (
-                <li key={training.id} className="rounded-lg border border-border bg-panel-elevated px-3 py-2">
-                  <div className="flex items-center justify-between gap-2">
+                <li key={training.id}>
+                  <Link
+                    href={`/trainings?trainingId=${training.id}&filter=${filter}`}
+                    className={`block rounded-lg border px-3 py-2 transition-colors ${
+                      model.selected_training?.id === training.id
+                        ? "border-accent bg-[#2a2415]"
+                        : "border-border bg-panel-elevated hover:border-accent-soft"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
                     <div>
                       <p className="text-sm text-foreground">{formatDate(training.date)} · {formatTime(training.start_time)}-{formatTime(training.end_time)}</p>
                       <p className="text-xs text-muted">{training.location ?? "Plats saknas"} · {training.theme ?? "Tema saknas"}</p>
                     </div>
                     <div className="text-sm text-muted">{training.attendance_rate}%</div>
-                  </div>
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -81,15 +110,32 @@ export default async function TrainingsPage() {
             <p className="text-sm text-muted">Lägg till spelare för att komma igång.</p>
           ) : (
             <div className="space-y-3">
-              <form action={markAllPresentAction}>
-                <input type="hidden" name="trainingId" value={model.selected_training.id} />
-                <Button type="submit" variant="secondary" className="w-full sm:w-auto">
-                  Markera alla närvarande
-                </Button>
-              </form>
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+                <Link
+                  href={`/trainings?trainingId=${model.selected_training.id}&filter=all`}
+                  className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-xs ${
+                    filter === "all" ? "border-accent bg-accent text-black" : "border-border bg-panel-elevated text-foreground"
+                  }`}
+                >
+                  Alla ({model.players.length})
+                </Link>
+                {statuses.map((choice) => (
+                  <Link
+                    key={choice}
+                    href={`/trainings?trainingId=${model.selected_training?.id}&filter=${choice}`}
+                    className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-xs ${
+                      filter === choice
+                        ? "border-accent bg-accent text-black"
+                        : "border-border bg-panel-elevated text-foreground"
+                    }`}
+                  >
+                    {statusText(choice)} ({model.status_counts[choice]})
+                  </Link>
+                ))}
+              </div>
 
               <ul className="space-y-2">
-                {model.players.map((player) => {
+                {visiblePlayers.map((player) => {
                   const status = model.attendance_by_player[player.id] ?? "unknown";
 
                   return (
@@ -124,10 +170,28 @@ export default async function TrainingsPage() {
                   );
                 })}
               </ul>
+              {visiblePlayers.length === 0 ? <p className="text-sm text-muted">Ingen spelare matchar valt filter.</p> : null}
             </div>
           )}
         </Card>
       </section>
+
+      {model.selected_training ? (
+        <Card className="fixed inset-x-0 bottom-14 z-30 mx-2 border-accent/40 bg-panel-elevated/95 backdrop-blur lg:static lg:mx-0 lg:border-border lg:bg-panel lg:backdrop-blur-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted">Snabbval för hela träningen:</span>
+            {statuses.map((choice) => (
+              <form key={`bulk-${choice}`} action={setAllAttendanceStatusAction}>
+                <input type="hidden" name="trainingId" value={model.selected_training?.id} />
+                <input type="hidden" name="status" value={choice} />
+                <Button type="submit" variant={choice === "present" ? "primary" : "secondary"} className="h-9 px-3 text-xs">
+                  Alla {statusText(choice).toLowerCase()}
+                </Button>
+              </form>
+            ))}
+          </div>
+        </Card>
+      ) : null}
     </div>
   );
 }

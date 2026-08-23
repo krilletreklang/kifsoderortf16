@@ -25,13 +25,21 @@ export interface TrainingAttendanceModel {
   selected_training: TrainingListItem | null;
   players: TrainingPlayer[];
   attendance_by_player: Record<string, AttendanceStatus>;
+  status_counts: Record<AttendanceStatus, number>;
 }
 
 function round(value: number) {
   return Math.round(value * 10) / 10;
 }
 
-export async function getTrainingAttendanceModel(teamId: string): Promise<TrainingAttendanceModel> {
+interface TrainingAttendanceOptions {
+  selectedTrainingId?: string;
+}
+
+export async function getTrainingAttendanceModel(
+  teamId: string,
+  options?: TrainingAttendanceOptions,
+): Promise<TrainingAttendanceModel> {
   const supabase = await createClient();
 
   const [{ data: trainings }, { data: players }, { data: attendanceRows }] = await Promise.all([
@@ -80,8 +88,13 @@ export async function getTrainingAttendanceModel(teamId: string): Promise<Traini
     };
   });
 
+  const selectedFromQuery = options?.selectedTrainingId
+    ? trainingsWithRates.find((training) => training.id === options.selectedTrainingId)
+    : null;
+
   const today = new Date().toISOString().slice(0, 10);
   const selectedTraining =
+    selectedFromQuery ??
     trainingsWithRates
       .filter((training) => training.date >= today)
       .sort((a, b) => a.date.localeCompare(b.date))[0] ??
@@ -90,8 +103,23 @@ export async function getTrainingAttendanceModel(teamId: string): Promise<Traini
 
   const selectedAttendance = attendance.filter((row) => row.training_id === selectedTraining?.id);
   const attendanceByPlayer: Record<string, AttendanceStatus> = {};
+  const statusCounts: Record<AttendanceStatus, number> = {
+    present: 0,
+    late: 0,
+    absent: 0,
+    unknown: 0,
+  };
+
   for (const row of selectedAttendance) {
     attendanceByPlayer[row.player_id] = row.status;
+    statusCounts[row.status] += 1;
+  }
+
+  for (const player of players ?? []) {
+    const status = attendanceByPlayer[player.id] ?? "unknown";
+    if (!(player.id in attendanceByPlayer)) {
+      statusCounts[status] += 1;
+    }
   }
 
   return {
@@ -99,5 +127,6 @@ export async function getTrainingAttendanceModel(teamId: string): Promise<Traini
     selected_training: selectedTraining,
     players: (players ?? []) as TrainingPlayer[],
     attendance_by_player: attendanceByPlayer,
+    status_counts: statusCounts,
   };
 }
