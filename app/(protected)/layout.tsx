@@ -4,12 +4,16 @@ import { requireUser } from "@/lib/auth/session";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
 import { logoutAction } from "./actions";
 
+function normalizeClubName(name: string) {
+  return name.replace(/SODERORT/gi, "SÖDERORT").replace(/Soderort/g, "Söderort");
+}
+
 export default async function ProtectedLayout({ children }: LayoutProps<"/">) {
   const user = await requireUser();
   const membership = await getPrimaryTeamMembership(user.id);
 
   const teamLabel = membership
-    ? `${membership.teams.club_name} · ${membership.teams.name} · ${membership.role.toUpperCase()}`
+    ? `${normalizeClubName(membership.teams.club_name)} · ${membership.teams.name} · ${membership.role.toUpperCase()}`
     : "Ingen lagkoppling";
 
   return (
