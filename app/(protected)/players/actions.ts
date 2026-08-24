@@ -60,3 +60,33 @@ export async function createPlayerAction(formData: FormData) {
   revalidatePath("/players");
   revalidatePath("/");
 }
+
+const deletePlayerSchema = z.object({
+  playerId: z.string().uuid(),
+});
+
+export async function deletePlayerAction(formData: FormData) {
+  const user = await requireUser();
+  const membership = await getPrimaryTeamMembership(user.id);
+  if (!membership) return;
+
+  const parsed = deletePlayerSchema.safeParse({
+    playerId: String(formData.get("playerId") ?? ""),
+  });
+
+  if (!parsed.success) {
+    return;
+  }
+
+  const supabase = await createClient();
+  await supabase
+    .from("players")
+    .delete()
+    .eq("id", parsed.data.playerId)
+    .eq("team_id", membership.team_id);
+
+  revalidatePath("/players");
+  revalidatePath("/trainings");
+  revalidatePath("/matches");
+  revalidatePath("/");
+}

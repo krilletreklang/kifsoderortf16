@@ -74,7 +74,7 @@ function DraggablePiece({ piece, selected, onSelect }: { piece: TacticsPiece; se
       {...listeners}
       {...attributes}
     >
-      {piece.number ?? piece.label}
+      {piece.kind === "ball" ? "⚽" : piece.kind === "cone" ? "🔺" : piece.number ?? piece.label}
     </button>
   );
 }
@@ -271,6 +271,23 @@ export function TacticalBoardClient({
     }
   }
 
+  function nudgeArrowPoint(arrowId: string, point: "from" | "to", dx: number, dy: number) {
+    setData((current) => ({
+      ...current,
+      arrows: current.arrows.map((arrow) =>
+        arrow.id === arrowId
+          ? {
+              ...arrow,
+              [point]: {
+                x: clamp(arrow[point].x + dx),
+                y: clamp(arrow[point].y + dy),
+              },
+            }
+          : arrow,
+      ),
+    }));
+  }
+
   return (
     <div className="space-y-4 lg:space-y-6">
       <Card>
@@ -407,6 +424,22 @@ export function TacticalBoardClient({
             Ta bort markerat objekt
           </Button>
 
+          {selectedArrowId ? (
+            <div className="space-y-2 rounded-lg border border-border bg-panel-elevated p-2">
+              <p className="text-xs text-muted">Justera vald pil</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "from", -1.5, 0)}>Start ◀</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "from", 1.5, 0)}>Start ▶</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "from", 0, -1.5)}>Start ▲</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "from", 0, 1.5)}>Start ▼</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "to", -1.5, 0)}>Slut ◀</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "to", 1.5, 0)}>Slut ▶</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "to", 0, -1.5)}>Slut ▲</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "to", 0, 1.5)}>Slut ▼</Button>
+              </div>
+            </div>
+          ) : null}
+
           <form action={onSaveBoard} className="space-y-2">
             <input type="hidden" name="boardId" value={selectedBoard.id} />
             <input type="hidden" name="boardType" value={boardType} />
@@ -482,23 +515,58 @@ export function TacticalBoardClient({
                 {data.arrows.map((arrow) => {
                   const marker = arrow.type === "pass" ? "arrowPass" : arrow.type === "run" ? "arrowRun" : arrow.type === "press" ? "arrowPress" : "arrowHead";
                   return (
-                    <line
-                      key={arrow.id}
-                      x1={arrow.from.x}
-                      y1={(arrow.from.y / 100) * 60}
-                      x2={arrow.to.x}
-                      y2={(arrow.to.y / 100) * 60}
-                      stroke={selectedArrowId === arrow.id ? "#ffffff" : arrowColor(arrow.type)}
-                      strokeWidth={selectedArrowId === arrow.id ? 1.1 : 0.8}
-                      strokeDasharray={arrow.type === "pass" ? "1.4 1" : arrow.type === "press" ? "0.6 0.8" : undefined}
-                      markerEnd={`url(#${marker})`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setSelectedArrowId(arrow.id);
-                        setSelectedZoneId(null);
-                        setSelectedPieceId(null);
-                      }}
-                    />
+                    <g key={arrow.id}>
+                      <line
+                        x1={arrow.from.x}
+                        y1={(arrow.from.y / 100) * 60}
+                        x2={arrow.to.x}
+                        y2={(arrow.to.y / 100) * 60}
+                        stroke="transparent"
+                        strokeWidth={3.2}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedArrowId(arrow.id);
+                          setSelectedZoneId(null);
+                          setSelectedPieceId(null);
+                        }}
+                      />
+                      <line
+                        x1={arrow.from.x}
+                        y1={(arrow.from.y / 100) * 60}
+                        x2={arrow.to.x}
+                        y2={(arrow.to.y / 100) * 60}
+                        stroke={selectedArrowId === arrow.id ? "#ffffff" : arrowColor(arrow.type)}
+                        strokeWidth={selectedArrowId === arrow.id ? 1.2 : 0.9}
+                        strokeDasharray={arrow.type === "pass" ? "1.4 1" : arrow.type === "press" ? "0.6 0.8" : undefined}
+                        markerEnd={`url(#${marker})`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedArrowId(arrow.id);
+                          setSelectedZoneId(null);
+                          setSelectedPieceId(null);
+                        }}
+                      />
+                      {selectedArrowId === arrow.id ? (
+                        <>
+                          <circle
+                            cx={arrow.from.x}
+                            cy={(arrow.from.y / 100) * 60}
+                            r={1.1}
+                            fill="#fde047"
+                            stroke="#1f2937"
+                            strokeWidth={0.2}
+                          />
+                          <circle
+                            cx={arrow.to.x}
+                            cy={(arrow.to.y / 100) * 60}
+                            r={1.1}
+                            fill="#fde047"
+                            stroke="#1f2937"
+                            strokeWidth={0.2}
+                          />
+                        </>
+                      ) : null}
+                    </g>
                   );
                 })}
               </svg>

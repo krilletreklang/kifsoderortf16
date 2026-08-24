@@ -47,7 +47,7 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-wide text-muted">{detail.match.match_type}</p>
-            <h2 className="text-3xl text-foreground">vs {detail.match.opponent}</h2>
+            <h2 className="text-2xl text-foreground md:text-3xl">vs {detail.match.opponent}</h2>
             <p className="mt-1 text-sm text-muted">
               {formatDate(detail.match.date)} · {formatTime(detail.match.start_time)} · {homeAwayText(detail.match.home_away)}
             </p>
@@ -77,13 +77,67 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
           <p className="text-sm text-muted">Kallade: {detail.summary.called_up_count} / {detail.summary.suggested_count}</p>
         </div>
 
-        <form method="get" className="mt-3 flex items-center gap-2">
+        <form method="get" className="mt-3 flex flex-wrap items-center gap-2">
           <label htmlFor="suggested" className="text-sm text-muted">Föreslå lagstorlek</label>
           <input id="suggested" name="suggested" type="number" min={1} max={20} defaultValue={detail.summary.suggested_count} className="h-9 w-24 rounded-md border border-border bg-panel-elevated px-2 text-sm text-foreground" />
           <Button type="submit" className="h-9 px-3 text-xs">Föreslå lag</Button>
         </form>
 
-        <div className="mt-3 overflow-x-auto">
+        <ul className="mt-3 space-y-3 md:hidden">
+          {detail.players.map((player) => (
+            <li key={`mobile-${player.player_id}`} className={`rounded-lg border border-border bg-panel-elevated px-3 py-3 ${player.recommended ? "ring-1 ring-accent/70" : ""}`}>
+              <div className="mb-2 flex items-start justify-between gap-2">
+                <p className="text-sm font-semibold text-foreground">
+                  {player.first_name} {player.last_name} {player.jersey_number ? `#${player.jersey_number}` : ""}
+                </p>
+                <span className="text-xs text-muted">{player.attendance_percent}% närvaro</span>
+              </div>
+              <p className="text-xs text-muted">{player.reason}</p>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted">
+                <p>Matcher 5: {player.recent_matches_played}</p>
+                <p>Totalt: {player.total_matches_played}</p>
+                <p>Minuter: {player.minutes_total}</p>
+                <p>Senast: {player.last_played_date ? formatDate(player.last_played_date) : "-"}</p>
+              </div>
+
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <form action={toggleCalledUpAction}>
+                  <input type="hidden" name="matchId" value={detail.match.id} />
+                  <input type="hidden" name="playerId" value={player.player_id} />
+                  <input type="hidden" name="value" value={player.called_up ? "false" : "true"} />
+                  <Button type="submit" variant={player.called_up ? "primary" : "secondary"} className="h-8 w-full px-2 text-xs">
+                    {player.called_up ? "Kallad" : "Kalla"}
+                  </Button>
+                </form>
+                <form action={toggleStarterAction}>
+                  <input type="hidden" name="matchId" value={detail.match.id} />
+                  <input type="hidden" name="playerId" value={player.player_id} />
+                  <input type="hidden" name="value" value={player.starter ? "false" : "true"} />
+                  <Button type="submit" variant={player.starter ? "primary" : "secondary"} className="h-8 w-full px-2 text-xs">
+                    {player.starter ? "Startar" : "Bänk"}
+                  </Button>
+                </form>
+                <form action={toggleParticipatedAction}>
+                  <input type="hidden" name="matchId" value={detail.match.id} />
+                  <input type="hidden" name="playerId" value={player.player_id} />
+                  <input type="hidden" name="value" value={player.participated ? "false" : "true"} />
+                  <Button type="submit" variant={player.participated ? "primary" : "secondary"} className="h-8 w-full px-2 text-xs">
+                    {player.participated ? "Spelar" : "Ej"}
+                  </Button>
+                </form>
+              </div>
+
+              <form action={setMinutesAction} className="mt-2 flex items-center gap-2">
+                <input type="hidden" name="matchId" value={detail.match.id} />
+                <input type="hidden" name="playerId" value={player.player_id} />
+                <input name="minutes" type="number" min={0} max={120} defaultValue={player.minutes_played} className="h-8 w-20 rounded-md border border-border bg-panel-elevated px-2 text-xs text-foreground" />
+                <Button type="submit" variant="secondary" className="h-8 px-3 text-xs">Spara min</Button>
+              </form>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-3 hidden overflow-x-auto md:block">
           <table className="min-w-[980px] text-sm">
             <thead>
               <tr className="border-b border-border text-left text-muted">

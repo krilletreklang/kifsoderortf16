@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth/session";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
 import { getTrainingAttendanceModel, type AttendanceStatus } from "@/lib/db/queries/trainings";
 import { formatDate, formatTime } from "@/lib/utils/date";
-import { createTrainingAction, setAllAttendanceStatusAction, setAttendanceAction } from "./actions";
+import { createTrainingAction, deleteTrainingAction, setAllAttendanceStatusAction, setAttendanceAction } from "./actions";
 
 function statusText(status: AttendanceStatus) {
   if (status === "present") return "Närvarande";
@@ -76,22 +76,29 @@ export default async function TrainingsPage({ searchParams }: TrainingsPageProps
             <ul className="space-y-2">
               {model.trainings.map((training) => (
                 <li key={training.id}>
-                  <Link
-                    href={`/trainings?trainingId=${training.id}&filter=${filter}`}
-                    className={`block rounded-lg border px-3 py-2 transition-colors ${
+                  <div
+                    className={`rounded-lg border px-3 py-2 transition-colors ${
                       model.selected_training?.id === training.id
                         ? "border-accent bg-[#2a2415]"
                         : "border-border bg-panel-elevated hover:border-accent-soft"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <p className="text-sm text-foreground">{formatDate(training.date)} · {formatTime(training.start_time)}-{formatTime(training.end_time)}</p>
-                      <p className="text-xs text-muted">{training.location ?? "Plats saknas"} · {training.theme ?? "Tema saknas"}</p>
+                      <Link href={`/trainings?trainingId=${training.id}&filter=${filter}`} className="min-w-0 flex-1">
+                        <p className="text-sm text-foreground">{formatDate(training.date)} · {formatTime(training.start_time)}-{formatTime(training.end_time)}</p>
+                        <p className="text-xs text-muted">{training.location ?? "Plats saknas"} · {training.theme ?? "Tema saknas"}</p>
+                      </Link>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm text-muted">{training.attendance_rate}%</div>
+                        <form action={deleteTrainingAction}>
+                          <input type="hidden" name="trainingId" value={training.id} />
+                          <Button type="submit" variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
+                            Ta bort
+                          </Button>
+                        </form>
+                      </div>
                     </div>
-                    <div className="text-sm text-muted">{training.attendance_rate}%</div>
-                    </div>
-                  </Link>
+                  </div>
                 </li>
               ))}
             </ul>

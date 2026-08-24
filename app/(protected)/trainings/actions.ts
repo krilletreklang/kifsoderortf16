@@ -26,6 +26,10 @@ const setAllAttendanceSchema = z.object({
   status: z.enum(["present", "absent", "late", "unknown"]),
 });
 
+const deleteTrainingSchema = z.object({
+  trainingId: z.string().uuid(),
+});
+
 function nullableString(value: FormDataEntryValue | null): string | null {
   if (!value) return null;
   const normalized = String(value).trim();
@@ -152,6 +156,30 @@ export async function setAllAttendanceStatusAction(formData: FormData) {
     })),
     { onConflict: "training_id,player_id" },
   );
+
+  revalidatePath("/trainings");
+  revalidatePath("/");
+}
+
+export async function deleteTrainingAction(formData: FormData) {
+  const user = await requireUser();
+  const membership = await getPrimaryTeamMembership(user.id);
+  if (!membership) return;
+
+  const parsed = deleteTrainingSchema.safeParse({
+    trainingId: String(formData.get("trainingId") ?? ""),
+  });
+
+  if (!parsed.success) {
+    return;
+  }
+
+  const supabase = await createClient();
+  await supabase
+    .from("trainings")
+    .delete()
+    .eq("id", parsed.data.trainingId)
+    .eq("team_id", membership.team_id);
 
   revalidatePath("/trainings");
   revalidatePath("/");

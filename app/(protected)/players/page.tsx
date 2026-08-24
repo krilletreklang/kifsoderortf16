@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { requireUser } from "@/lib/auth/session";
 import { getPlayersOverview } from "@/lib/db/queries/players";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
-import { createPlayerAction } from "./actions";
+import { createPlayerAction, deletePlayerAction } from "./actions";
 
 export default async function PlayersPage() {
   const user = await requireUser();
@@ -71,40 +71,78 @@ export default async function PlayersPage() {
         {players.length === 0 ? (
           <EmptyState title="Inga spelare anlagda" description="Lägg till första spelaren med formuläret ovan." />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-muted">
-                  <th className="px-2 py-2">Spelare</th>
-                  <th className="px-2 py-2">Tröja</th>
-                  <th className="px-2 py-2">Aktiv</th>
-                  <th className="px-2 py-2">Närvaro</th>
-                  <th className="px-2 py-2">Matcher</th>
-                  <th className="px-2 py-2">Starter</th>
-                  <th className="px-2 py-2">Minuter</th>
-                  <th className="px-2 py-2">Vanligaste pos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {players.map((player) => (
-                  <tr key={player.id} className="border-b border-border/60 hover:bg-panel-elevated/60">
-                    <td className="px-2 py-3">
+          <>
+            <ul className="space-y-2 md:hidden">
+              {players.map((player) => (
+                <li key={`mobile-${player.id}`} className="rounded-lg border border-border bg-panel-elevated px-3 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
                       <Link href={`/players/${player.id}`} className="font-semibold text-foreground hover:text-accent">
                         {player.first_name} {player.last_name}
                       </Link>
-                    </td>
-                    <td className="px-2 py-3 text-muted">{player.jersey_number ?? "-"}</td>
-                    <td className="px-2 py-3">{player.active ? "Ja" : "Nej"}</td>
-                    <td className="px-2 py-3">{player.attendance_percent}%</td>
-                    <td className="px-2 py-3">{player.matches_total}</td>
-                    <td className="px-2 py-3">{player.starts_total}</td>
-                    <td className="px-2 py-3">{player.minutes_total}</td>
-                    <td className="px-2 py-3">{player.common_position}</td>
+                      <p className="text-xs text-muted">Tröja {player.jersey_number ?? "-"} · {player.active ? "Aktiv" : "Inaktiv"}</p>
+                    </div>
+                    <form action={deletePlayerAction}>
+                      <input type="hidden" name="playerId" value={player.id} />
+                      <Button type="submit" variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
+                        Ta bort
+                      </Button>
+                    </form>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted">
+                    <p>Närvaro: {player.attendance_percent}%</p>
+                    <p>Matcher: {player.matches_total}</p>
+                    <p>Starter: {player.starts_total}</p>
+                    <p>Minuter: {player.minutes_total}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted">
+                    <th className="px-2 py-2">Spelare</th>
+                    <th className="px-2 py-2">Tröja</th>
+                    <th className="px-2 py-2">Aktiv</th>
+                    <th className="px-2 py-2">Närvaro</th>
+                    <th className="px-2 py-2">Matcher</th>
+                    <th className="px-2 py-2">Starter</th>
+                    <th className="px-2 py-2">Minuter</th>
+                    <th className="px-2 py-2">Vanligaste pos</th>
+                    <th className="px-2 py-2">Åtgärd</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {players.map((player) => (
+                    <tr key={player.id} className="border-b border-border/60 hover:bg-panel-elevated/60">
+                      <td className="px-2 py-3">
+                        <Link href={`/players/${player.id}`} className="font-semibold text-foreground hover:text-accent">
+                          {player.first_name} {player.last_name}
+                        </Link>
+                      </td>
+                      <td className="px-2 py-3 text-muted">{player.jersey_number ?? "-"}</td>
+                      <td className="px-2 py-3">{player.active ? "Ja" : "Nej"}</td>
+                      <td className="px-2 py-3">{player.attendance_percent}%</td>
+                      <td className="px-2 py-3">{player.matches_total}</td>
+                      <td className="px-2 py-3">{player.starts_total}</td>
+                      <td className="px-2 py-3">{player.minutes_total}</td>
+                      <td className="px-2 py-3">{player.common_position}</td>
+                      <td className="px-2 py-3">
+                        <form action={deletePlayerAction}>
+                          <input type="hidden" name="playerId" value={player.id} />
+                          <Button type="submit" variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
+                            Ta bort
+                          </Button>
+                        </form>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
     </div>

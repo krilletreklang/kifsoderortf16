@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth/session";
 import { getMatchesOverview } from "@/lib/db/queries/matches";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
 import { formatDate, formatTime } from "@/lib/utils/date";
-import { createMatchAction } from "./actions";
+import { createMatchAction, deleteMatchAction } from "./actions";
 
 function homeAwayText(value: "home" | "away") {
   return value === "home" ? "Hemma" : "Borta";
@@ -64,19 +64,27 @@ export default async function MatchesPage() {
             <ul className="space-y-2">
               {upcoming.map((match) => (
                 <li key={match.id}>
-                  <Link href={`/matches/${match.id}`} className="block rounded-lg border border-border bg-panel-elevated px-3 py-3 hover:border-accent-soft">
+                  <div className="rounded-lg border border-border bg-panel-elevated px-3 py-3 hover:border-accent-soft">
                     <div className="flex items-center justify-between gap-2">
-                      <div>
+                      <Link href={`/matches/${match.id}`} className="min-w-0 flex-1">
                         <p className="text-sm text-foreground">{formatDate(match.date)} · {formatTime(match.start_time)}</p>
                         <p className="text-base font-semibold text-foreground">vs {match.opponent}</p>
                         <p className="text-xs text-muted">{homeAwayText(match.home_away)} · {match.location ?? "Plats saknas"}</p>
-                      </div>
-                      <div className="text-right text-xs text-muted">
-                        <p>Kallade: {match.called_count}</p>
-                        <p>Spelade: {match.participated_count}</p>
+                      </Link>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right text-xs text-muted">
+                          <p>Kallade: {match.called_count}</p>
+                          <p>Spelade: {match.participated_count}</p>
+                        </div>
+                        <form action={deleteMatchAction}>
+                          <input type="hidden" name="matchId" value={match.id} />
+                          <Button type="submit" variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
+                            Ta bort
+                          </Button>
+                        </form>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -94,23 +102,31 @@ export default async function MatchesPage() {
             <ul className="space-y-2">
               {played.map((match) => (
                 <li key={match.id}>
-                  <Link href={`/matches/${match.id}`} className="block rounded-lg border border-border bg-panel-elevated px-3 py-3 hover:border-accent-soft">
+                  <div className="rounded-lg border border-border bg-panel-elevated px-3 py-3 hover:border-accent-soft">
                     <div className="flex items-center justify-between gap-2">
-                      <div>
+                      <Link href={`/matches/${match.id}`} className="min-w-0 flex-1">
                         <p className="text-sm text-foreground">{formatDate(match.date)} · {formatTime(match.start_time)}</p>
                         <p className="text-base font-semibold text-foreground">vs {match.opponent}</p>
                         <p className="text-xs text-muted">{homeAwayText(match.home_away)} · {match.location ?? "Plats saknas"}</p>
-                      </div>
-                      <div className="text-right">
-                        {match.goals_for !== null && match.goals_against !== null ? (
-                          <p className="text-lg font-semibold text-foreground">{match.goals_for}-{match.goals_against}</p>
-                        ) : (
-                          <p className="text-xs text-muted">Inget resultat</p>
-                        )}
-                        <p className="text-xs text-muted">{match.status === "completed" ? "Spelad" : match.status === "cancelled" ? "Inställd" : "Planerad"}</p>
+                      </Link>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          {match.goals_for !== null && match.goals_against !== null ? (
+                            <p className="text-lg font-semibold text-foreground">{match.goals_for}-{match.goals_against}</p>
+                          ) : (
+                            <p className="text-xs text-muted">Inget resultat</p>
+                          )}
+                          <p className="text-xs text-muted">{match.status === "completed" ? "Spelad" : match.status === "cancelled" ? "Inställd" : "Planerad"}</p>
+                        </div>
+                        <form action={deleteMatchAction}>
+                          <input type="hidden" name="matchId" value={match.id} />
+                          <Button type="submit" variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
+                            Ta bort
+                          </Button>
+                        </form>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </li>
               ))}
             </ul>

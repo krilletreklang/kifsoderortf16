@@ -35,6 +35,10 @@ const resultSchema = z.object({
   status: z.enum(["planned", "completed", "cancelled"]),
 });
 
+const deleteMatchSchema = z.object({
+  matchId: z.string().uuid(),
+});
+
 function nullableString(value: FormDataEntryValue | null): string | null {
   if (!value) return null;
   const normalized = String(value).trim();
@@ -236,6 +240,27 @@ export async function saveResultAction(formData: FormData) {
     .eq("team_id", membership.team_id);
 
   revalidatePath(`/matches/${parsed.data.matchId}`);
+  revalidatePath("/matches");
+  revalidatePath("/");
+}
+
+export async function deleteMatchAction(formData: FormData) {
+  const membership = await getMembership();
+  if (!membership) return;
+
+  const parsed = deleteMatchSchema.safeParse({
+    matchId: String(formData.get("matchId") ?? ""),
+  });
+
+  if (!parsed.success) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("matches")
+    .delete()
+    .eq("id", parsed.data.matchId)
+    .eq("team_id", membership.team_id);
+
   revalidatePath("/matches");
   revalidatePath("/");
 }
