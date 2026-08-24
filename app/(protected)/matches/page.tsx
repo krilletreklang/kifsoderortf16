@@ -12,9 +12,14 @@ function homeAwayText(value: "home" | "away") {
   return value === "home" ? "Hemma" : "Borta";
 }
 
-export default async function MatchesPage() {
+interface MatchesPageProps {
+  searchParams: Promise<{ error?: string }>;
+}
+
+export default async function MatchesPage({ searchParams }: MatchesPageProps) {
   const user = await requireUser();
   const membership = await getPrimaryTeamMembership(user.id);
+  const params = await searchParams;
 
   if (!membership) {
     return <EmptyState title="Ingen lagkoppling" description="Be en admin koppla ditt konto till laget för att hantera matcher." />;
@@ -25,12 +30,14 @@ export default async function MatchesPage() {
 
   const upcoming = matches.filter((match) => match.date >= today && match.status !== "cancelled");
   const played = matches.filter((match) => match.date < today || match.status === "completed");
+  const errorText = params.error === "invalid_time" ? "Ange tid i format HH:MM, till exempel 18:30." : null;
 
   return (
     <div className="space-y-4 lg:space-y-6">
       <Card>
         <h2 className="text-2xl text-foreground">Skapa match</h2>
         <p className="mt-1 text-sm text-muted">Planera matcher, kalla spelare och följ minuter över tid.</p>
+        {errorText ? <p className="mt-2 text-sm text-red-300">{errorText}</p> : null}
         <form action={createMatchAction} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-7">
           <input name="date" type="date" required className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
           <input
@@ -38,9 +45,8 @@ export default async function MatchesPage() {
             type="text"
             required
             inputMode="numeric"
-            pattern="^([01]\\d|2[0-3]):[0-5]\\d$"
             placeholder="HH:MM"
-            title="Ange tid i 24h-format, t.ex. 18:30"
+            autoComplete="off"
             className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground"
           />
           <input name="opponent" required placeholder="Motstånd" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-2" />

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
@@ -8,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const createMatchSchema = z.object({
   date: z.string().min(10),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  startTime: z.string().min(4),
   opponent: z.string().min(2),
   homeAway: z.enum(["home", "away"]),
   location: z.string().nullable(),
@@ -39,6 +40,11 @@ const deleteMatchSchema = z.object({
   matchId: z.string().uuid(),
 });
 
+const greenCardSchema = z.object({
+  matchId: z.string().uuid(),
+  playerId: z.string().uuid().nullable(),
+});
+
 function nullableString(value: FormDataEntryValue | null): string | null {
   if (!value) return null;
   const normalized = String(value).trim();
@@ -51,6 +57,21 @@ function nullableNumber(value: FormDataEntryValue | null): number | null {
   if (!normalized) return null;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeTimeInput(value: FormDataEntryValue | null): string | null {
+  const raw = String(value ?? "")
+    .trim()
+    .replace(".", ":")
+    .replace("：", ":");
+
+  const match = /^(\d{1,2}):([0-5]\d)$/.exec(raw);
+  if (!match) return null;
+
+  const hour = Number(match[1]);
+  if (!Number.isFinite(hour) || hour < 0 || hour > 23) return null;
+
+  return `${String(hour).padStart(2, "0")}:${match[2]}`;
 }
 
 async function getMembership() {
@@ -86,9 +107,14 @@ export async function createMatchAction(formData: FormData) {
   const membership = await getMembership();
   if (!membership) return;
 
+  const normalizedTime = normalizeTimeInput(formData.get("startTime"));
+  if (!normalizedTime) {
+    redirect("/matches?error=invalid_time");
+  }
+
   const parsed = createMatchSchema.safeParse({
     date: String(formData.get("date") ?? ""),
-    startTime: String(formData.get("startTime") ?? ""),
+    startTime: normalizedTime,
     opponent: String(formData.get("opponent") ?? "").trim(),
     homeAway: String(formData.get("homeAway") ?? "home"),
     location: nullableString(formData.get("location")),
@@ -113,6 +139,7 @@ export async function createMatchAction(formData: FormData) {
 
   revalidatePath("/matches");
   revalidatePath("/");
+  redirect("/matches");
 }
 
 export async function toggleCalledUpAction(formData: FormData) {
@@ -263,4 +290,51 @@ export async function deleteMatchAction(formData: FormData) {
 
   revalidatePath("/matches");
   revalidatePath("/");
+}
+
+export async function saveGreenCardAction(formData: FormData) {
+  const membership = await getMembership();
+  if (!membership) return;
+
+  const parsed = greenCardSchema.safeParse({
+    matchId: String(formData.get("matchId") ?? ""),
+    playerId: nullableString(formData.get("playerId")),
+  });
+
+  if (!parsed.success) return;
+
+  const supabase = await createClient();
+
+  const { data: match } = await supabase
+    .from("matches")
+    .select("id")
+    .eq("id", parsed.data.matchId)
+    .eq("team_id", membership.team_id)
+    .maybeSingle();
+
+  if (!match) return;
+
+  if (!parsed.data.playerId) {
+    await supabase.from("match_green_cards").delete().eq("match_id", parsed.data.matchId);
+  } else {
+    const { data: player } = await supabase
+      .from("players")
+      .select("id")
+      .eq("id", parsed.data.playerId)
+      .eq("team_id", membership.team_id)
+      .maybeSingle();
+
+    if (!player) return;
+
+    await supabase.from("match_green_cards").upsert(
+      {
+        match_id: parsed.data.matchId,
+        player_id: parsed.data.playerId,
+      },
+      { onConflict: "match_id" },
+    );
+  }
+
+  revalidatePath(`/matches/${parsed.data.matchId}`);
+  revalidatePath("/statistics");
 }

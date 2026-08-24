@@ -23,6 +23,7 @@ interface TrainingsPageProps {
   searchParams: Promise<{
     trainingId?: string;
     filter?: AttendanceFilter;
+    error?: string;
   }>;
 }
 
@@ -39,6 +40,15 @@ export default async function TrainingsPage({ searchParams }: TrainingsPageProps
     selectedTrainingId: params.trainingId,
   });
 
+  const errorText =
+    params.error === "invalid_time"
+      ? "Ange tider i format HH:MM, till exempel 18:00 och 19:30."
+      : params.error === "end_before_start"
+        ? "Sluttid måste vara senare än starttid."
+        : params.error === "invalid_training"
+          ? "Kunde inte spara träningen. Kontrollera fälten."
+          : null;
+
   const filter: AttendanceFilter = params.filter ?? "all";
   const visiblePlayers = model.players.filter((player) => {
     if (filter === "all") return true;
@@ -51,6 +61,7 @@ export default async function TrainingsPage({ searchParams }: TrainingsPageProps
       <Card>
         <h2 className="text-2xl text-foreground">Skapa träning</h2>
         <p className="mt-1 text-sm text-muted">Planera nästa pass och registrera närvaro direkt i appen.</p>
+        {errorText ? <p className="mt-2 text-sm text-red-300">{errorText}</p> : null}
         <form action={createTrainingAction} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-6">
           <input name="date" type="date" required className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent" />
           <input
@@ -58,9 +69,8 @@ export default async function TrainingsPage({ searchParams }: TrainingsPageProps
             type="text"
             required
             inputMode="numeric"
-            pattern="^([01]\\d|2[0-3]):[0-5]\\d$"
             placeholder="Start HH:MM"
-            title="Ange tid i 24h-format, t.ex. 18:00"
+            autoComplete="off"
             className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent"
           />
           <input
@@ -68,9 +78,8 @@ export default async function TrainingsPage({ searchParams }: TrainingsPageProps
             type="text"
             required
             inputMode="numeric"
-            pattern="^([01]\\d|2[0-3]):[0-5]\\d$"
             placeholder="Slut HH:MM"
-            title="Ange tid i 24h-format, t.ex. 19:30"
+            autoComplete="off"
             className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent"
           />
           <input name="location" placeholder="Plats" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent md:col-span-2" />

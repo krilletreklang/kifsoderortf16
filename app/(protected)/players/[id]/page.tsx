@@ -55,6 +55,7 @@ export default async function PlayerDetailsPage({ params }: PlayerDetailsPagePro
         <StatCard label="Kallad" value={`${player.called_up_total}`} />
         <StatCard label="Spelad" value={`${player.participated_total}`} />
         <StatCard label="Starter" value={`${player.starts_total}`} />
+        <StatCard label="Grönt kort" value={`${player.green_cards_total}`} />
         <StatCard label="Minuter" value={`${player.minutes_total}`} />
         <StatCard label="Snitt min/match" value={`${player.avg_minutes_per_match}`} />
         <StatCard label="Positioner" value={`${player.position_breakdown.length}`} />

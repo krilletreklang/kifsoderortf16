@@ -26,6 +26,7 @@ export interface PlayerDetails {
   called_up_total: number;
   participated_total: number;
   starts_total: number;
+  green_cards_total: number;
   minutes_total: number;
   avg_minutes_per_match: number;
   position_breakdown: Array<{ position: string; count: number }>;
@@ -139,7 +140,7 @@ export async function getPlayerDetails(teamId: string, playerId: string): Promis
     return null;
   }
 
-  const [{ data: attendanceRows }, { data: matchRows }, { data: positionRows }] = await Promise.all([
+  const [{ data: attendanceRows }, { data: matchRows }, { data: positionRows }, { count: greenCardsCount }] = await Promise.all([
     supabase
       .from("training_attendance")
       .select("training_id, status, trainings!inner(date, team_id)")
@@ -154,6 +155,11 @@ export async function getPlayerDetails(teamId: string, playerId: string): Promis
     supabase
       .from("match_player_positions")
       .select("position, matches!inner(team_id)")
+      .eq("player_id", playerId)
+      .eq("matches.team_id", teamId),
+    supabase
+      .from("match_green_cards")
+      .select("id, matches!inner(team_id)", { count: "exact", head: true })
       .eq("player_id", playerId)
       .eq("matches.team_id", teamId),
   ]);
@@ -233,6 +239,7 @@ export async function getPlayerDetails(teamId: string, playerId: string): Promis
     called_up_total: calledUpTotal,
     participated_total: participatedTotal,
     starts_total: startsTotal,
+    green_cards_total: greenCardsCount ?? 0,
     minutes_total: minutesTotal,
     avg_minutes_per_match: avgMinutesPerMatch,
     position_breakdown: positionBreakdown,

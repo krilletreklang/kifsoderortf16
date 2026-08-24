@@ -9,6 +9,7 @@ import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
 import { formatDate, formatTime } from "@/lib/utils/date";
 import {
   saveResultAction,
+  saveGreenCardAction,
   setMinutesAction,
   toggleCalledUpAction,
   toggleParticipatedAction,
@@ -68,6 +69,23 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
             <option value="cancelled">Inställd</option>
           </select>
           <Button type="submit" variant="secondary" className="h-10 md:col-span-2">Spara matchresultat</Button>
+        </form>
+
+        <form action={saveGreenCardAction} className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-4">
+          <input type="hidden" name="matchId" value={detail.match.id} />
+          <select
+            name="playerId"
+            defaultValue={detail.match.green_card_player_id ?? ""}
+            className="h-10 rounded-lg border border-border bg-panel-elevated px-3 text-sm text-foreground md:col-span-3"
+          >
+            <option value="">Inget grönt kort valt</option>
+            {detail.players.map((player) => (
+              <option key={player.player_id} value={player.player_id}>
+                {player.first_name} {player.last_name} {player.jersey_number ? `#${player.jersey_number}` : ""}
+              </option>
+            ))}
+          </select>
+          <Button type="submit" variant="secondary" className="h-10">Spara grönt kort</Button>
         </form>
       </Card>
 

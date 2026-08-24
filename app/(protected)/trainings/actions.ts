@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
@@ -8,14 +9,11 @@ import { createClient } from "@/lib/supabase/server";
 
 const createTrainingSchema = z.object({
   date: z.string().min(10),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  startTime: z.string().min(4),
+  endTime: z.string().min(4),
   location: z.string().nullable(),
   theme: z.string().nullable(),
   notes: z.string().nullable(),
-}).refine((value) => value.endTime > value.startTime, {
-  message: "end_after_start",
-  path: ["endTime"],
 });
 
 const setAttendanceSchema = z.object({
@@ -39,21 +37,48 @@ function nullableString(value: FormDataEntryValue | null): string | null {
   return normalized ? normalized : null;
 }
 
+function normalizeTimeInput(value: FormDataEntryValue | null): string | null {
+  const raw = String(value ?? "")
+    .trim()
+    .replace(".", ":")
+    .replace("：", ":");
+
+  const match = /^(\d{1,2}):([0-5]\d)$/.exec(raw);
+  if (!match) return null;
+
+  const hour = Number(match[1]);
+  if (!Number.isFinite(hour) || hour < 0 || hour > 23) return null;
+
+  return `${String(hour).padStart(2, "0")}:${match[2]}`;
+}
+
 export async function createTrainingAction(formData: FormData) {
   const user = await requireUser();
   const membership = await getPrimaryTeamMembership(user.id);
   if (!membership) return;
 
+  const normalizedStart = normalizeTimeInput(formData.get("startTime"));
+  const normalizedEnd = normalizeTimeInput(formData.get("endTime"));
+
+  if (!normalizedStart || !normalizedEnd) {
+    redirect("/trainings?error=invalid_time");
+  }
+
+  if (normalizedEnd <= normalizedStart) {
+    redirect("/trainings?error=end_before_start");
+  }
+
   const parsed = createTrainingSchema.safeParse({
     date: String(formData.get("date") ?? ""),
-    startTime: String(formData.get("startTime") ?? ""),
-    endTime: String(formData.get("endTime") ?? ""),
+    startTime: normalizedStart,
+    endTime: normalizedEnd,
     location: nullableString(formData.get("location")),
     theme: nullableString(formData.get("theme")),
     notes: nullableString(formData.get("notes")),
   });
 
   if (!parsed.success) {
+    redirect("/trainings?error=invalid_training");
     return;
   }
 
@@ -70,6 +95,7 @@ export async function createTrainingAction(formData: FormData) {
 
   revalidatePath("/trainings");
   revalidatePath("/");
+  redirect("/trainings");
 }
 
 export async function setAttendanceAction(formData: FormData) {

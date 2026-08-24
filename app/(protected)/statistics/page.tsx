@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireUser } from "@/lib/auth/session";
 import { getDashboardSummary } from "@/lib/db/queries/dashboard";
+import { getGreenCardStats } from "@/lib/db/queries/statistics";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
 import { formatDate } from "@/lib/utils/date";
 
@@ -14,6 +15,7 @@ export default async function StatisticsPage() {
   }
 
   const summary = await getDashboardSummary(membership.team_id);
+  const greenCards = await getGreenCardStats(membership.team_id);
 
   return (
     <div className="space-y-4 lg:space-y-6">
@@ -59,6 +61,42 @@ export default async function StatisticsPage() {
           </ul>
         )}
       </Card>
+
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <Card>
+          <h3 className="text-xl text-foreground">Grönt kort - topplista</h3>
+          {greenCards.leaderboard.length === 0 ? (
+            <p className="mt-2 text-sm text-muted">Inga gröna kort registrerade ännu.</p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {greenCards.leaderboard.map((item) => (
+                <li key={item.player_id} className="flex items-center justify-between rounded-lg border border-border bg-panel-elevated px-3 py-2">
+                  <span className="text-sm text-foreground">
+                    {item.first_name} {item.last_name} {item.jersey_number ? `#${item.jersey_number}` : ""}
+                  </span>
+                  <span className="text-sm text-muted">{item.green_cards}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card>
+          <h3 className="text-xl text-foreground">Senaste gröna kort</h3>
+          {greenCards.recent.length === 0 ? (
+            <p className="mt-2 text-sm text-muted">Inga gröna kort registrerade ännu.</p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {greenCards.recent.map((item) => (
+                <li key={`${item.match_id}-${item.date}`} className="rounded-lg border border-border bg-panel-elevated px-3 py-2">
+                  <p className="text-sm text-foreground">{item.player_name}</p>
+                  <p className="text-xs text-muted">{formatDate(item.date)} · {item.opponent || "Okänd motståndare"}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </section>
     </div>
   );
 }

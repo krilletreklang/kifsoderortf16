@@ -38,6 +38,7 @@ export interface MatchPlayerMetric {
 export interface MatchDetailData {
   match: MatchListItem & {
     notes: string | null;
+    green_card_player_id: string | null;
   };
   players: MatchPlayerMetric[];
   summary: {
@@ -94,7 +95,7 @@ export async function getMatchesOverview(teamId: string): Promise<MatchListItem[
 export async function getMatchDetail(teamId: string, matchId: string, suggestedCount: number): Promise<MatchDetailData | null> {
   const supabase = await createClient();
 
-  const [{ data: match }, { data: roster }, { data: selectionRows }, { data: allMatchRows }, { data: completedMatches }, { data: attendanceRows }] =
+  const [{ data: match }, { data: roster }, { data: selectionRows }, { data: allMatchRows }, { data: completedMatches }, { data: attendanceRows }, { data: greenCardRow }] =
     await Promise.all([
       supabase
         .from("matches")
@@ -129,6 +130,12 @@ export async function getMatchDetail(teamId: string, matchId: string, suggestedC
         .select("player_id, status, trainings!inner(team_id, date)")
         .eq("trainings.team_id", teamId)
         .gte("trainings.date", subDays(60)),
+      supabase
+        .from("match_green_cards")
+        .select("player_id, matches!inner(team_id)")
+        .eq("match_id", matchId)
+        .eq("matches.team_id", teamId)
+        .maybeSingle(),
     ]);
 
   if (!match) {
@@ -259,6 +266,7 @@ export async function getMatchDetail(teamId: string, matchId: string, suggestedC
       ...match,
       called_count: players.filter((player) => player.called_up).length,
       participated_count: players.filter((player) => player.participated).length,
+      green_card_player_id: greenCardRow?.player_id ?? null,
     },
     players,
     summary: {
