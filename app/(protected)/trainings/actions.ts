@@ -8,11 +8,14 @@ import { createClient } from "@/lib/supabase/server";
 
 const createTrainingSchema = z.object({
   date: z.string().min(10),
-  startTime: z.string().min(4),
-  endTime: z.string().min(4),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   location: z.string().nullable(),
   theme: z.string().nullable(),
   notes: z.string().nullable(),
+}).refine((value) => value.endTime > value.startTime, {
+  message: "end_after_start",
+  path: ["endTime"],
 });
 
 const setAttendanceSchema = z.object({

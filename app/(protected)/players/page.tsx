@@ -7,21 +7,40 @@ import { getPlayersOverview } from "@/lib/db/queries/players";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
 import { createPlayerAction, deletePlayerAction } from "./actions";
 
-export default async function PlayersPage() {
+interface PlayersPageProps {
+  searchParams: Promise<{ error?: string; created?: string }>;
+}
+
+export default async function PlayersPage({ searchParams }: PlayersPageProps) {
   const user = await requireUser();
   const membership = await getPrimaryTeamMembership(user.id);
+  const params = await searchParams;
 
   if (!membership) {
     return <EmptyState title="Ingen lagkoppling" description="Be en admin koppla ditt konto till laget för att se spelarregistret." />;
   }
 
   const players = await getPlayersOverview(membership.team_id);
+  const created = params.created === "1";
+
+  const errorText =
+    params.error === "duplicate_jersey"
+      ? "Tröjnummer används redan i laget. Välj ett annat nummer eller lämna fältet tomt."
+      : params.error === "invalid_player"
+        ? "Kontrollera att för- och efternamn är ifyllda korrekt."
+        : params.error === "player_constraint"
+          ? "Ogiltigt värde för spelare. Kontrollera tröjnummer och födelseår."
+          : params.error === "player_save_failed"
+            ? "Kunde inte spara spelaren. Försök igen."
+            : null;
 
   return (
     <div className="space-y-4 lg:space-y-6">
       <Card>
         <h2 className="text-2xl text-foreground">Ny spelare</h2>
         <p className="mt-1 text-sm text-muted">Lägg till spelare i lagets register.</p>
+        {created ? <p className="mt-2 text-sm text-green-300">Spelaren sparades.</p> : null}
+        {errorText ? <p className="mt-2 text-sm text-red-300">{errorText}</p> : null}
         <form action={createPlayerAction} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-6">
           <input
             name="firstName"

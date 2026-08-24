@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const createMatchSchema = z.object({
   date: z.string().min(10),
-  startTime: z.string().min(4),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   opponent: z.string().min(2),
   homeAway: z.enum(["home", "away"]),
   location: z.string().nullable(),

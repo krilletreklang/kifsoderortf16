@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
@@ -42,12 +43,12 @@ export async function createPlayerAction(formData: FormData) {
   });
 
   if (!parsed.success) {
+    redirect("/players?error=invalid_player");
     return;
   }
 
   const supabase = await createClient();
-
-  await supabase.from("players").insert({
+  const { error } = await supabase.from("players").insert({
     team_id: membership.team_id,
     first_name: parsed.data.firstName,
     last_name: parsed.data.lastName,
@@ -57,8 +58,21 @@ export async function createPlayerAction(formData: FormData) {
     active: true,
   });
 
+  if (error) {
+    if (error.code === "23505") {
+      redirect("/players?error=duplicate_jersey");
+    }
+
+    if (error.code === "23514") {
+      redirect("/players?error=player_constraint");
+    }
+
+    redirect("/players?error=player_save_failed");
+  }
+
   revalidatePath("/players");
   revalidatePath("/");
+  redirect("/players?created=1");
 }
 
 const deletePlayerSchema = z.object({

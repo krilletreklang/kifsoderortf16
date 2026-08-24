@@ -53,8 +53,26 @@ export default async function TrainingsPage({ searchParams }: TrainingsPageProps
         <p className="mt-1 text-sm text-muted">Planera nästa pass och registrera närvaro direkt i appen.</p>
         <form action={createTrainingAction} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-6">
           <input name="date" type="date" required className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent" />
-          <input name="startTime" type="time" required className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent" />
-          <input name="endTime" type="time" required className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent" />
+          <input
+            name="startTime"
+            type="text"
+            required
+            inputMode="numeric"
+            pattern="^([01]\\d|2[0-3]):[0-5]\\d$"
+            placeholder="Start HH:MM"
+            title="Ange tid i 24h-format, t.ex. 18:00"
+            className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent"
+          />
+          <input
+            name="endTime"
+            type="text"
+            required
+            inputMode="numeric"
+            pattern="^([01]\\d|2[0-3]):[0-5]\\d$"
+            placeholder="Slut HH:MM"
+            title="Ange tid i 24h-format, t.ex. 19:30"
+            className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent"
+          />
           <input name="location" placeholder="Plats" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent md:col-span-2" />
           <input name="theme" placeholder="Tema" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent" />
           <input name="notes" placeholder="Anteckning" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent md:col-span-5" />

@@ -33,7 +33,16 @@ export default async function MatchesPage() {
         <p className="mt-1 text-sm text-muted">Planera matcher, kalla spelare och följ minuter över tid.</p>
         <form action={createMatchAction} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-7">
           <input name="date" type="date" required className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
-          <input name="startTime" type="time" required className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
+          <input
+            name="startTime"
+            type="text"
+            required
+            inputMode="numeric"
+            pattern="^([01]\\d|2[0-3]):[0-5]\\d$"
+            placeholder="HH:MM"
+            title="Ange tid i 24h-format, t.ex. 18:30"
+            className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground"
+          />
           <input name="opponent" required placeholder="Motstånd" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-2" />
           <select name="homeAway" defaultValue="home" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground">
             <option value="home">Hemma</option>
