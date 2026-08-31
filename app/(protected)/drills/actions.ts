@@ -21,6 +21,20 @@ const deleteDrillSchema = z.object({
   drillId: z.string().uuid(),
 });
 
+const updateDrillSchema = z.object({
+  drillId: z.string().uuid(),
+  title: z.string().min(2),
+  category: z.string().min(2),
+  duration: z.coerce.number().int().min(1).max(120).nullable(),
+  playersMin: z.coerce.number().int().min(1).max(30).nullable(),
+  playersMax: z.coerce.number().int().min(1).max(30).nullable(),
+  equipment: z.string().nullable(),
+  description: z.string().nullable(),
+  coachingPoints: z.string().nullable(),
+  videoUrl: z.string().url().nullable(),
+  imageUrl: z.string().url().nullable(),
+});
+
 function nullableNumber(value: FormDataEntryValue | null): number | null {
   if (!value) return null;
   const normalized = String(value).trim();
@@ -138,4 +152,48 @@ export async function deleteDrillAction(formData: FormData) {
     .eq("team_id", membership.team_id);
 
   revalidatePath("/drills");
+}
+
+export async function updateDrillAction(formData: FormData) {
+  const user = await requireUser();
+  const membership = await getPrimaryTeamMembership(user.id);
+  if (!membership) return;
+
+  const parsed = updateDrillSchema.safeParse({
+    drillId: String(formData.get("drillId") ?? ""),
+    title: String(formData.get("title") ?? "").trim(),
+    category: String(formData.get("category") ?? "").trim(),
+    duration: nullableNumber(formData.get("duration")),
+    playersMin: nullableNumber(formData.get("playersMin")),
+    playersMax: nullableNumber(formData.get("playersMax")),
+    equipment: nullableString(formData.get("equipment")),
+    description: nullableString(formData.get("description")),
+    coachingPoints: nullableString(formData.get("coachingPoints")),
+    videoUrl: nullableString(formData.get("videoUrl")),
+    imageUrl: nullableString(formData.get("imageUrl")),
+  });
+
+  if (!parsed.success) return;
+
+  const supabase = await createClient();
+
+  await supabase
+    .from("drills")
+    .update({
+      title: parsed.data.title,
+      category: parsed.data.category,
+      duration: parsed.data.duration,
+      players_min: parsed.data.playersMin,
+      players_max: parsed.data.playersMax,
+      equipment: parsed.data.equipment,
+      description: parsed.data.description,
+      coaching_points: parsed.data.coachingPoints,
+      video_url: parsed.data.videoUrl,
+      image_url: parsed.data.imageUrl,
+    })
+    .eq("id", parsed.data.drillId)
+    .eq("team_id", membership.team_id);
+
+  revalidatePath("/drills");
+  revalidatePath(`/drills/${parsed.data.drillId}`);
 }

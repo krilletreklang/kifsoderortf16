@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { DrillCreateForm } from "@/components/drills/drill-create-form";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -43,7 +44,9 @@ export default async function DrillsPage() {
               <li key={drill.id} className="rounded-lg border border-border bg-panel-elevated px-3 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-base font-semibold text-foreground">{drill.title}</p>
+                    <Link href={`/drills/${drill.id}`} className="text-base font-semibold text-foreground hover:text-accent">
+                      {drill.title}
+                    </Link>
                     <p className="text-xs text-muted">
                       {drill.category} · {drill.duration ?? "-"} min · {drill.players_min ?? "-"}-{drill.players_max ?? "-"} spelare · {drill.equipment ?? "Inget material"}
                     </p>
@@ -54,8 +57,11 @@ export default async function DrillsPage() {
                     ) : null}
                     {drill.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={drill.image_url} alt={`Taktikbild för ${drill.title}`} className="mt-2 max-h-52 w-full max-w-md rounded-md border border-border object-cover" />
+                      <img src={drill.image_url} alt={`Taktikbild för ${drill.title}`} className="mt-2 max-h-52 w-full max-w-md rounded-md border border-border object-contain bg-black/20" />
                     ) : null}
+                    <Link href={`/drills/${drill.id}`} className="mt-2 inline-block text-xs text-accent hover:underline">
+                      Öppna och redigera
+                    </Link>
                   </div>
                   <form action={deleteDrillAction}>
                     <input type="hidden" name="drillId" value={drill.id} />
