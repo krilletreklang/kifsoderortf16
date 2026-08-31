@@ -36,6 +36,11 @@ const clearBoardSchema = z.object({
   boardType: boardTypeSchema,
 });
 
+const saveReferenceImageSchema = z.object({
+  boardId: z.string().uuid(),
+  imageUrl: z.string().url().nullable(),
+});
+
 async function getMembership() {
   const user = await requireUser();
   return getPrimaryTeamMembership(user.id);
@@ -43,6 +48,38 @@ async function getMembership() {
 
 function normalizeName(value: FormDataEntryValue | null) {
   return String(value ?? "").trim();
+}
+
+function nullableString(value: FormDataEntryValue | null): string | null {
+  if (!value) return null;
+  const normalized = String(value).trim();
+  return normalized ? normalized : null;
+}
+
+function sanitizeFileName(name: string) {
+  return name.replace(/[^a-zA-Z0-9._-]/g, "-");
+}
+
+async function uploadReferenceImage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  teamId: string,
+  file: File,
+) {
+  const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+  const safeExt = (ext || "bin").toLowerCase();
+  const path = `${teamId}/tactics/images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${sanitizeFileName(safeExt)}`;
+
+  const { error } = await supabase.storage.from("team-media").upload(path, file, {
+    upsert: true,
+    contentType: file.type || undefined,
+  });
+
+  if (error) {
+    return null;
+  }
+
+  const { data } = supabase.storage.from("team-media").getPublicUrl(path);
+  return data.publicUrl;
 }
 
 export async function createBoardAction(formData: FormData) {
@@ -201,6 +238,42 @@ export async function clearBoardAction(formData: FormData) {
   await supabase
     .from("tactical_boards")
     .update({ data: template })
+    .eq("id", parsed.data.boardId)
+    .eq("team_id", membership.team_id);
+
+  revalidatePath("/tactics");
+  redirect(`/tactics?boardId=${parsed.data.boardId}`);
+}
+
+export async function saveReferenceImageAction(formData: FormData) {
+  const membership = await getMembership();
+  if (!membership) return;
+
+  const parsed = saveReferenceImageSchema.safeParse({
+    boardId: String(formData.get("boardId") ?? ""),
+    imageUrl: nullableString(formData.get("imageUrl")),
+  });
+
+  if (!parsed.success) {
+    return;
+  }
+
+  const supabase = await createClient();
+  let imageUrl = parsed.data.imageUrl;
+
+  const imageFile = formData.get("imageFile");
+  if (imageFile instanceof File && imageFile.size > 0) {
+    if (["image/png", "image/jpeg", "image/webp"].includes(imageFile.type)) {
+      const uploaded = await uploadReferenceImage(supabase, membership.team_id, imageFile);
+      if (uploaded) {
+        imageUrl = uploaded;
+      }
+    }
+  }
+
+  await supabase
+    .from("tactical_boards")
+    .update({ reference_image_url: imageUrl })
     .eq("id", parsed.data.boardId)
     .eq("team_id", membership.team_id);
 

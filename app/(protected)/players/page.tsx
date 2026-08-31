@@ -111,8 +111,9 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
                   <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted">
                     <p>Närvaro: {player.attendance_percent}%</p>
                     <p>Matcher: {player.matches_total}</p>
-                    <p>Starter: {player.starts_total}</p>
-                    <p>Minuter: {player.minutes_total}</p>
+                    <p>Kallad: {player.called_up_total}</p>
+                    <p>Spelad: {player.participated_total}</p>
+                    <p>Position: {player.common_position}</p>
                   </div>
                 </li>
               ))}
@@ -127,8 +128,8 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
                     <th className="px-2 py-2">Aktiv</th>
                     <th className="px-2 py-2">Närvaro</th>
                     <th className="px-2 py-2">Matcher</th>
-                    <th className="px-2 py-2">Starter</th>
-                    <th className="px-2 py-2">Minuter</th>
+                    <th className="px-2 py-2">Kallad</th>
+                    <th className="px-2 py-2">Spelad</th>
                     <th className="px-2 py-2">Vanligaste pos</th>
                     <th className="px-2 py-2">Åtgärd</th>
                   </tr>
@@ -145,8 +146,8 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
                       <td className="px-2 py-3">{player.active ? "Ja" : "Nej"}</td>
                       <td className="px-2 py-3">{player.attendance_percent}%</td>
                       <td className="px-2 py-3">{player.matches_total}</td>
-                      <td className="px-2 py-3">{player.starts_total}</td>
-                      <td className="px-2 py-3">{player.minutes_total}</td>
+                      <td className="px-2 py-3">{player.called_up_total}</td>
+                      <td className="px-2 py-3">{player.participated_total}</td>
                       <td className="px-2 py-3">{player.common_position}</td>
                       <td className="px-2 py-3">
                         <form action={deletePlayerAction}>

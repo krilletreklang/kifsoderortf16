@@ -23,12 +23,6 @@ const toggleSchema = z.object({
   value: z.enum(["true", "false"]),
 });
 
-const minutesSchema = z.object({
-  matchId: z.string().uuid(),
-  playerId: z.string().uuid(),
-  minutes: z.coerce.number().int().min(0).max(120),
-});
-
 const resultSchema = z.object({
   matchId: z.string().uuid(),
   goalsFor: z.coerce.number().int().min(0).nullable(),
@@ -97,8 +91,6 @@ async function ensureMatchRow(
       player_id: playerId,
       called_up: false,
       participated: false,
-      starter: false,
-      minutes_played: 0,
     });
   }
 }
@@ -160,37 +152,12 @@ export async function toggleCalledUpAction(formData: FormData) {
   const calledUp = parsed.data.value === "true";
   await supabase
     .from("match_players")
-    .update({ called_up: calledUp, starter: calledUp ? undefined : false })
+    .update({ called_up: calledUp, participated: calledUp ? undefined : false })
     .eq("match_id", parsed.data.matchId)
     .eq("player_id", parsed.data.playerId);
 
   revalidatePath(`/matches/${parsed.data.matchId}`);
   revalidatePath("/matches");
-}
-
-export async function toggleStarterAction(formData: FormData) {
-  const membership = await getMembership();
-  if (!membership) return;
-
-  const parsed = toggleSchema.safeParse({
-    matchId: String(formData.get("matchId") ?? ""),
-    playerId: String(formData.get("playerId") ?? ""),
-    value: String(formData.get("value") ?? "false"),
-  });
-
-  if (!parsed.success) return;
-
-  const supabase = await createClient();
-  await ensureMatchRow(parsed.data.matchId, parsed.data.playerId, supabase);
-
-  const starter = parsed.data.value === "true";
-  await supabase
-    .from("match_players")
-    .update({ starter, called_up: starter ? true : undefined })
-    .eq("match_id", parsed.data.matchId)
-    .eq("player_id", parsed.data.playerId);
-
-  revalidatePath(`/matches/${parsed.data.matchId}`);
 }
 
 export async function toggleParticipatedAction(formData: FormData) {
@@ -212,30 +179,6 @@ export async function toggleParticipatedAction(formData: FormData) {
   await supabase
     .from("match_players")
     .update({ participated, called_up: participated ? true : undefined })
-    .eq("match_id", parsed.data.matchId)
-    .eq("player_id", parsed.data.playerId);
-
-  revalidatePath(`/matches/${parsed.data.matchId}`);
-}
-
-export async function setMinutesAction(formData: FormData) {
-  const membership = await getMembership();
-  if (!membership) return;
-
-  const parsed = minutesSchema.safeParse({
-    matchId: String(formData.get("matchId") ?? ""),
-    playerId: String(formData.get("playerId") ?? ""),
-    minutes: String(formData.get("minutes") ?? "0"),
-  });
-
-  if (!parsed.success) return;
-
-  const supabase = await createClient();
-  await ensureMatchRow(parsed.data.matchId, parsed.data.playerId, supabase);
-
-  await supabase
-    .from("match_players")
-    .update({ minutes_played: parsed.data.minutes, called_up: true, participated: parsed.data.minutes > 0 })
     .eq("match_id", parsed.data.matchId)
     .eq("player_id", parsed.data.playerId);
 

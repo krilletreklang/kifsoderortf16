@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { requireUser } from "@/lib/auth/session";
 import { getTacticsPageData } from "@/lib/db/queries/tactics";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
-import { clearBoardAction, createBoardAction, duplicateBoardAction, renameBoardAction, saveBoardAction } from "./actions";
+import { clearBoardAction, createBoardAction, duplicateBoardAction, renameBoardAction, saveBoardAction, saveReferenceImageAction } from "./actions";
 
 interface TacticsPageProps {
   searchParams: Promise<{
@@ -29,6 +29,7 @@ export default async function TacticsPage({ searchParams }: TacticsPageProps) {
 
   return (
     <TacticalBoardClient
+      key={params.boardId ?? boards[0]?.id ?? "no-board"}
       boards={boards}
       roster={roster}
       selectedBoardId={params.boardId}
@@ -37,6 +38,7 @@ export default async function TacticsPage({ searchParams }: TacticsPageProps) {
       onSaveBoard={saveBoardAction}
       onDuplicateBoard={duplicateBoardAction}
       onClearBoard={clearBoardAction}
+      onSaveReferenceImage={saveReferenceImageAction}
     />
   );
 }

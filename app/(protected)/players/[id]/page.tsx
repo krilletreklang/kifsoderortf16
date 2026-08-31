@@ -54,10 +54,7 @@ export default async function PlayerDetailsPage({ params }: PlayerDetailsPagePro
         <StatCard label="Närvaro" value={`${player.attendance_percent}%`} />
         <StatCard label="Kallad" value={`${player.called_up_total}`} />
         <StatCard label="Spelad" value={`${player.participated_total}`} />
-        <StatCard label="Starter" value={`${player.starts_total}`} />
         <StatCard label="Grönt kort" value={`${player.green_cards_total}`} />
-        <StatCard label="Minuter" value={`${player.minutes_total}`} />
-        <StatCard label="Snitt min/match" value={`${player.avg_minutes_per_match}`} />
         <StatCard label="Positioner" value={`${player.position_breakdown.length}`} />
       </section>
 
@@ -108,8 +105,6 @@ export default async function PlayerDetailsPage({ params }: PlayerDetailsPagePro
                   <th className="px-2 py-2">Motstand</th>
                   <th className="px-2 py-2">Kallad</th>
                   <th className="px-2 py-2">Spelad</th>
-                  <th className="px-2 py-2">Start</th>
-                  <th className="px-2 py-2">Minuter</th>
                 </tr>
               </thead>
               <tbody>
@@ -119,8 +114,6 @@ export default async function PlayerDetailsPage({ params }: PlayerDetailsPagePro
                     <td className="px-2 py-3">{item.opponent || "-"}</td>
                     <td className="px-2 py-3">{item.called_up ? "Ja" : "Nej"}</td>
                     <td className="px-2 py-3">{item.participated ? "Ja" : "Nej"}</td>
-                    <td className="px-2 py-3">{item.starter ? "Ja" : "Nej"}</td>
-                    <td className="px-2 py-3">{item.minutes_played}</td>
                   </tr>
                 ))}
               </tbody>

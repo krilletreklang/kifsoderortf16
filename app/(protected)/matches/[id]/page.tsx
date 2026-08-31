@@ -10,10 +10,8 @@ import { formatDate, formatTime } from "@/lib/utils/date";
 import {
   saveResultAction,
   saveGreenCardAction,
-  setMinutesAction,
   toggleCalledUpAction,
   toggleParticipatedAction,
-  toggleStarterAction,
 } from "../actions";
 
 interface MatchDetailsPageProps {
@@ -114,25 +112,16 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
               <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted">
                 <p>Matcher 5: {player.recent_matches_played}</p>
                 <p>Totalt: {player.total_matches_played}</p>
-                <p>Minuter: {player.minutes_total}</p>
                 <p>Senast: {player.last_played_date ? formatDate(player.last_played_date) : "-"}</p>
               </div>
 
-              <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <form action={toggleCalledUpAction}>
                   <input type="hidden" name="matchId" value={detail.match.id} />
                   <input type="hidden" name="playerId" value={player.player_id} />
                   <input type="hidden" name="value" value={player.called_up ? "false" : "true"} />
                   <Button type="submit" variant={player.called_up ? "primary" : "secondary"} className="h-8 w-full px-2 text-xs">
                     {player.called_up ? "Kallad" : "Kalla"}
-                  </Button>
-                </form>
-                <form action={toggleStarterAction}>
-                  <input type="hidden" name="matchId" value={detail.match.id} />
-                  <input type="hidden" name="playerId" value={player.player_id} />
-                  <input type="hidden" name="value" value={player.starter ? "false" : "true"} />
-                  <Button type="submit" variant={player.starter ? "primary" : "secondary"} className="h-8 w-full px-2 text-xs">
-                    {player.starter ? "Startar" : "Bänk"}
                   </Button>
                 </form>
                 <form action={toggleParticipatedAction}>
@@ -144,13 +133,6 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
                   </Button>
                 </form>
               </div>
-
-              <form action={setMinutesAction} className="mt-2 flex items-center gap-2">
-                <input type="hidden" name="matchId" value={detail.match.id} />
-                <input type="hidden" name="playerId" value={player.player_id} />
-                <input name="minutes" type="number" min={0} max={120} defaultValue={player.minutes_played} className="h-8 w-20 rounded-md border border-border bg-panel-elevated px-2 text-xs text-foreground" />
-                <Button type="submit" variant="secondary" className="h-8 px-3 text-xs">Spara min</Button>
-              </form>
             </li>
           ))}
         </ul>
@@ -163,13 +145,10 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
                 <th className="px-2 py-2">Matcher senaste 5</th>
                 <th className="px-2 py-2">Matcher totalt</th>
                 <th className="px-2 py-2">Senast spelad</th>
-                <th className="px-2 py-2">Minuter</th>
                 <th className="px-2 py-2">Närvaro</th>
                 <th className="px-2 py-2">Varför föreslagen</th>
                 <th className="px-2 py-2">Kallad</th>
-                <th className="px-2 py-2">Starter</th>
                 <th className="px-2 py-2">Spelade</th>
-                <th className="px-2 py-2">Minuter i match</th>
               </tr>
             </thead>
             <tbody>
@@ -181,7 +160,6 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
                   <td className="px-2 py-3">{player.recent_matches_played}</td>
                   <td className="px-2 py-3">{player.total_matches_played}</td>
                   <td className="px-2 py-3 text-muted">{player.last_played_date ? formatDate(player.last_played_date) : "-"}</td>
-                  <td className="px-2 py-3">{player.minutes_total}</td>
                   <td className="px-2 py-3">{player.attendance_percent}%</td>
                   <td className="px-2 py-3 text-muted">{player.reason}</td>
                   <td className="px-2 py-3">
@@ -195,31 +173,13 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
                     </form>
                   </td>
                   <td className="px-2 py-3">
-                    <form action={toggleStarterAction}>
-                      <input type="hidden" name="matchId" value={detail.match.id} />
-                      <input type="hidden" name="playerId" value={player.player_id} />
-                      <input type="hidden" name="value" value={player.starter ? "false" : "true"} />
-                      <Button type="submit" variant={player.starter ? "primary" : "secondary"} className="h-8 px-2 text-xs">
-                        {player.starter ? "Startar" : "Bänk"}
-                      </Button>
-                    </form>
-                  </td>
-                  <td className="px-2 py-3">
                     <form action={toggleParticipatedAction}>
                       <input type="hidden" name="matchId" value={detail.match.id} />
                       <input type="hidden" name="playerId" value={player.player_id} />
                       <input type="hidden" name="value" value={player.participated ? "false" : "true"} />
                       <Button type="submit" variant={player.participated ? "primary" : "secondary"} className="h-8 px-2 text-xs">
-                        {player.participated ? "Spelar" : "Ej"}
+                        {player.participated ? "Spelade" : "Ej spelat"}
                       </Button>
-                    </form>
-                  </td>
-                  <td className="px-2 py-3">
-                    <form action={setMinutesAction} className="flex items-center gap-1">
-                      <input type="hidden" name="matchId" value={detail.match.id} />
-                      <input type="hidden" name="playerId" value={player.player_id} />
-                      <input name="minutes" type="number" min={0} max={120} defaultValue={player.minutes_played} className="h-8 w-16 rounded-md border border-border bg-panel-elevated px-2 text-xs text-foreground" />
-                      <Button type="submit" variant="secondary" className="h-8 px-2 text-xs">Spara</Button>
                     </form>
                   </td>
                 </tr>

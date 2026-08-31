@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { DndContext, type DragEndEvent, useDraggable } from "@dnd-kit/core";
+import { DndContext, PointerSensor, type DragEndEvent, useDraggable, useSensor, useSensors } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,6 +28,7 @@ interface TacticalBoardClientProps {
   onSaveBoard: (formData: FormData) => Promise<void>;
   onDuplicateBoard: (formData: FormData) => Promise<void>;
   onClearBoard: (formData: FormData) => Promise<void>;
+  onSaveReferenceImage: (formData: FormData) => Promise<void>;
 }
 
 function clamp(value: number, min = 0, max = 100) {
@@ -60,6 +61,7 @@ function DraggablePiece({ piece, selected, onSelect }: { piece: TacticsPiece; se
     top: `${piece.y}%`,
     transform: `${CSS.Translate.toString(transform)} translate(-50%, -50%)`,
     zIndex: isDragging ? 60 : selected ? 55 : 40,
+    touchAction: "none" as const,
   };
 
   return (
@@ -88,6 +90,7 @@ export function TacticalBoardClient({
   onSaveBoard,
   onDuplicateBoard,
   onClearBoard,
+  onSaveReferenceImage,
 }: TacticalBoardClientProps) {
   const selectedBoard = useMemo(() => {
     if (selectedBoardId) {
@@ -113,8 +116,16 @@ export function TacticalBoardClient({
   const [selectedArrowId, setSelectedArrowId] = useState<string | null>(null);
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [rosterPlayerId, setRosterPlayerId] = useState<string>(roster[0]?.id ?? "");
+  const [referenceImageUrl, setReferenceImageUrl] = useState(selectedBoard?.reference_image_url ?? "");
 
   const boardRef = useRef<HTMLDivElement | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 4,
+      },
+    }),
+  );
 
   if (!selectedBoard) {
     return (
@@ -145,24 +156,24 @@ export function TacticalBoardClient({
 
   const serializedData = JSON.stringify(data);
 
-  function getPointFromMouse(event: React.MouseEvent<HTMLDivElement>) {
+  function getPoint(clientX: number, clientY: number) {
     const rect = boardRef.current?.getBoundingClientRect();
     if (!rect) return null;
 
     return {
-      x: clamp(((event.clientX - rect.left) / rect.width) * 100),
-      y: clamp(((event.clientY - rect.top) / rect.height) * 100),
+      x: clamp(((clientX - rect.left) / rect.width) * 100),
+      y: clamp(((clientY - rect.top) / rect.height) * 100),
     };
   }
 
-  function handleBoardClick(event: React.MouseEvent<HTMLDivElement>) {
+  function handleBoardPointerUp(event: React.PointerEvent<HTMLDivElement>) {
     if (toolMode === "move") {
       setSelectedArrowId(null);
       setSelectedZoneId(null);
       return;
     }
 
-    const point = getPointFromMouse(event);
+    const point = getPoint(event.clientX, event.clientY);
     if (!point) return;
 
     if (!anchorPoint) {
@@ -341,136 +352,29 @@ export function TacticalBoardClient({
         </div>
       </Card>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[320px_1fr]">
-        <Card className="space-y-4">
-          <div>
-            <h3 className="text-xl text-foreground">Verktyg</h3>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {(["move", "arrow", "pass", "run", "press", "zone"] as ToolMode[]).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => {
-                    setToolMode(mode);
-                    setAnchorPoint(null);
-                  }}
-                  className={`h-9 rounded-md border text-xs ${
-                    toolMode === mode ? "border-accent bg-accent text-black" : "border-border bg-panel-elevated text-foreground"
-                  }`}
-                >
-                  {mode === "move" ? "Flytta" : mode === "zone" ? "Zon" : mode.toUpperCase()}
-                </button>
-              ))}
-            </div>
-            {anchorPoint ? <p className="mt-2 text-xs text-muted">Punkt A vald. Klicka för punkt B.</p> : null}
-          </div>
-
-          <div>
-            <h3 className="text-xl text-foreground">Lägg till objekt</h3>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <Button type="button" variant="secondary" className="h-9 text-xs" onClick={() => addPiece("player")}>Spelare</Button>
-              <Button type="button" variant="secondary" className="h-9 text-xs" onClick={() => addPiece("opponent")}>Motståndare</Button>
-              <Button type="button" variant="secondary" className="h-9 text-xs" onClick={() => addPiece("ball")}>Boll</Button>
-              <Button type="button" variant="secondary" className="h-9 text-xs" onClick={() => addPiece("cone")}>Kona</Button>
-            </div>
-
-            <div className="mt-3 space-y-2">
-              <p className="text-xs text-muted">Lägg till från trupp</p>
-              <select
-                value={rosterPlayerId}
-                onChange={(event) => setRosterPlayerId(event.target.value)}
-                className="h-10 w-full rounded-lg border border-border bg-panel-elevated px-2 text-sm text-foreground"
-              >
-                {roster.map((player) => (
-                  <option key={player.id} value={player.id}>
-                    {player.first_name} {player.last_name} {player.jersey_number ? `#${player.jersey_number}` : ""}
-                  </option>
-                ))}
-              </select>
-              <Button type="button" variant="secondary" className="h-9 w-full text-xs" onClick={addRosterPlayer}>
-                Lägg till vald spelare
-              </Button>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-xl text-foreground">Tavla</h3>
-            <div className="mt-2 space-y-2">
-              <div>
-                <label className="mb-1 block text-xs text-muted">Typ</label>
-                <select
-                  value={boardType}
-                  onChange={(event) => setBoardType(event.target.value as BoardType)}
-                  className="h-10 w-full rounded-lg border border-border bg-panel-elevated px-2 text-sm text-foreground"
-                >
-                  <option value="7v7">7v7</option>
-                  <option value="9v9">9v9</option>
-                  <option value="training">Träningsövning</option>
-                  <option value="custom">Fri</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted">Formation / Rubrik</label>
-                <input
-                  value={data.formation}
-                  onChange={(event) => setData((current) => ({ ...current, formation: event.target.value }))}
-                  className="h-10 w-full rounded-lg border border-border bg-panel-elevated px-2 text-sm text-foreground"
-                />
-              </div>
-            </div>
-          </div>
-
-          <Button type="button" variant="ghost" className="w-full" onClick={removeSelected}>
-            Ta bort markerat objekt
-          </Button>
-
-          {selectedArrowId ? (
-            <div className="space-y-2 rounded-lg border border-border bg-panel-elevated p-2">
-              <p className="text-xs text-muted">Justera vald pil</p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "from", -1.5, 0)}>Start ◀</Button>
-                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "from", 1.5, 0)}>Start ▶</Button>
-                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "from", 0, -1.5)}>Start ▲</Button>
-                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "from", 0, 1.5)}>Start ▼</Button>
-                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "to", -1.5, 0)}>Slut ◀</Button>
-                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "to", 1.5, 0)}>Slut ▶</Button>
-                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "to", 0, -1.5)}>Slut ▲</Button>
-                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "to", 0, 1.5)}>Slut ▼</Button>
-              </div>
-            </div>
-          ) : null}
-
-          <form action={onSaveBoard} className="space-y-2">
-            <input type="hidden" name="boardId" value={selectedBoard.id} />
-            <input type="hidden" name="boardType" value={boardType} />
-            <textarea name="data" value={serializedData} readOnly className="hidden" />
-            <Button type="submit" className="w-full">Spara tavla</Button>
-          </form>
-
-          <form action={onDuplicateBoard}>
-            <input type="hidden" name="boardId" value={selectedBoard.id} />
-            <Button type="submit" variant="secondary" className="w-full">Duplicera tavla</Button>
-          </form>
-
-          <form action={onClearBoard}>
-            <input type="hidden" name="boardId" value={selectedBoard.id} />
-            <input type="hidden" name="boardType" value={boardType} />
-            <Button type="submit" variant="secondary" className="w-full">Rensa till template</Button>
-          </form>
-        </Card>
-
-        <Card>
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_320px]">
+        <Card className="order-1">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-2xl text-foreground">{boardName}</h3>
             <p className="text-sm text-muted">{data.formation}</p>
           </div>
 
-          <DndContext onDragEnd={onDragEnd}>
+          <DndContext sensors={sensors} onDragEnd={onDragEnd}>
             <div
               ref={boardRef}
-              onClick={handleBoardClick}
-              className="relative aspect-[10/6] w-full overflow-hidden rounded-xl border border-white/20 bg-[linear-gradient(180deg,#2f6f3a_0%,#245a30_100%)]"
+              onPointerUp={handleBoardPointerUp}
+              className="relative h-[68svh] min-h-[420px] w-full overflow-hidden rounded-xl border border-white/20 bg-[linear-gradient(180deg,#2f6f3a_0%,#245a30_100%)] md:h-auto md:aspect-[10/6]"
+              style={{ touchAction: toolMode === "move" ? "none" : "manipulation" }}
             >
+              {selectedBoard.reference_image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedBoard.reference_image_url}
+                  alt="Referensbild taktik"
+                  className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-35"
+                />
+              ) : null}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.16)_100%)]" />
               <div className="absolute inset-2 rounded-lg border border-white/80" />
               <div className="absolute left-1/2 top-2 bottom-2 w-px -translate-x-1/2 bg-white/70" />
               <div className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70" />
@@ -592,6 +496,150 @@ export function TacticalBoardClient({
               ) : null}
             </div>
           </DndContext>
+        </Card>
+
+        <Card className="order-2 space-y-4">
+          <div>
+            <h3 className="text-xl text-foreground">Verktyg</h3>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {(["move", "arrow", "pass", "run", "press", "zone"] as ToolMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => {
+                    setToolMode(mode);
+                    setAnchorPoint(null);
+                  }}
+                  className={`h-9 rounded-md border text-xs ${
+                    toolMode === mode ? "border-accent bg-accent text-black" : "border-border bg-panel-elevated text-foreground"
+                  }`}
+                >
+                  {mode === "move" ? "Flytta" : mode === "zone" ? "Zon" : mode.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            {anchorPoint ? <p className="mt-2 text-xs text-muted">Punkt A vald. Klicka för punkt B.</p> : null}
+          </div>
+
+          <div>
+            <h3 className="text-xl text-foreground">Lägg till objekt</h3>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Button type="button" variant="secondary" className="h-9 text-xs" onClick={() => addPiece("player")}>Spelare</Button>
+              <Button type="button" variant="secondary" className="h-9 text-xs" onClick={() => addPiece("opponent")}>Motståndare</Button>
+              <Button type="button" variant="secondary" className="h-9 text-xs" onClick={() => addPiece("ball")}>Boll</Button>
+              <Button type="button" variant="secondary" className="h-9 text-xs" onClick={() => addPiece("cone")}>Kona</Button>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-muted">Lägg till från trupp</p>
+              <select
+                value={rosterPlayerId}
+                onChange={(event) => setRosterPlayerId(event.target.value)}
+                className="h-10 w-full rounded-lg border border-border bg-panel-elevated px-2 text-sm text-foreground"
+              >
+                {roster.map((player) => (
+                  <option key={player.id} value={player.id}>
+                    {player.first_name} {player.last_name} {player.jersey_number ? `#${player.jersey_number}` : ""}
+                  </option>
+                ))}
+              </select>
+              <Button type="button" variant="secondary" className="h-9 w-full text-xs" onClick={addRosterPlayer}>
+                Lägg till vald spelare
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xl text-foreground">Tavla</h3>
+            <div className="mt-2 space-y-2">
+              <div>
+                <label className="mb-1 block text-xs text-muted">Typ</label>
+                <select
+                  value={boardType}
+                  onChange={(event) => setBoardType(event.target.value as BoardType)}
+                  className="h-10 w-full rounded-lg border border-border bg-panel-elevated px-2 text-sm text-foreground"
+                >
+                  <option value="7v7">7v7</option>
+                  <option value="9v9">9v9</option>
+                  <option value="training">Träningsövning</option>
+                  <option value="custom">Fri</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-muted">Formation / Rubrik</label>
+                <input
+                  value={data.formation}
+                  onChange={(event) => setData((current) => ({ ...current, formation: event.target.value }))}
+                  className="h-10 w-full rounded-lg border border-border bg-panel-elevated px-2 text-sm text-foreground"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xl text-foreground">Referensbild</h3>
+            <p className="mt-1 text-xs text-muted">Lägg en taktikbild ovanpå planen (URL eller fil).</p>
+            <form action={onSaveReferenceImage} className="mt-2 space-y-2">
+              <input type="hidden" name="boardId" value={selectedBoard.id} />
+              <input
+                name="imageUrl"
+                value={referenceImageUrl}
+                onChange={(event) => setReferenceImageUrl(event.target.value)}
+                placeholder="https://..."
+                className="h-10 w-full rounded-lg border border-border bg-panel-elevated px-2 text-sm text-foreground"
+              />
+              <input
+                name="imageFile"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="h-10 w-full rounded-lg border border-border bg-panel-elevated px-2 py-2 text-xs text-foreground"
+              />
+              <Button type="submit" variant="secondary" className="h-9 w-full text-xs">Spara bild</Button>
+            </form>
+            <form action={onSaveReferenceImage} className="mt-2">
+              <input type="hidden" name="boardId" value={selectedBoard.id} />
+              <input type="hidden" name="imageUrl" value="" />
+              <Button type="submit" variant="ghost" className="h-9 w-full text-xs">Ta bort bild</Button>
+            </form>
+          </div>
+
+          <Button type="button" variant="ghost" className="w-full" onClick={removeSelected}>
+            Ta bort markerat objekt
+          </Button>
+
+          {selectedArrowId ? (
+            <div className="space-y-2 rounded-lg border border-border bg-panel-elevated p-2">
+              <p className="text-xs text-muted">Justera vald pil</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "from", -1.5, 0)}>Start ◀</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "from", 1.5, 0)}>Start ▶</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "from", 0, -1.5)}>Start ▲</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "from", 0, 1.5)}>Start ▼</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "to", -1.5, 0)}>Slut ◀</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "to", 1.5, 0)}>Slut ▶</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "to", 0, -1.5)}>Slut ▲</Button>
+                <Button type="button" variant="secondary" className="h-8 text-xs" onClick={() => nudgeArrowPoint(selectedArrowId, "to", 0, 1.5)}>Slut ▼</Button>
+              </div>
+            </div>
+          ) : null}
+
+          <form action={onSaveBoard} className="space-y-2">
+            <input type="hidden" name="boardId" value={selectedBoard.id} />
+            <input type="hidden" name="boardType" value={boardType} />
+            <textarea name="data" value={serializedData} readOnly className="hidden" />
+            <Button type="submit" className="w-full">Spara tavla</Button>
+          </form>
+
+          <form action={onDuplicateBoard}>
+            <input type="hidden" name="boardId" value={selectedBoard.id} />
+            <Button type="submit" variant="secondary" className="w-full">Duplicera tavla</Button>
+          </form>
+
+          <form action={onClearBoard}>
+            <input type="hidden" name="boardId" value={selectedBoard.id} />
+            <input type="hidden" name="boardType" value={boardType} />
+            <Button type="submit" variant="secondary" className="w-full">Rensa till template</Button>
+          </form>
         </Card>
       </section>
 

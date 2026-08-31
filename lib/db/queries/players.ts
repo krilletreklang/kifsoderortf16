@@ -8,8 +8,8 @@ export interface PlayerOverview {
   active: boolean;
   attendance_percent: number;
   matches_total: number;
-  starts_total: number;
-  minutes_total: number;
+  called_up_total: number;
+  participated_total: number;
   common_position: string;
 }
 
@@ -25,10 +25,7 @@ export interface PlayerDetails {
   trainings_total: number;
   called_up_total: number;
   participated_total: number;
-  starts_total: number;
   green_cards_total: number;
-  minutes_total: number;
-  avg_minutes_per_match: number;
   position_breakdown: Array<{ position: string; count: number }>;
   recent_matches: Array<{
     match_id: string;
@@ -36,8 +33,6 @@ export interface PlayerDetails {
     opponent: string;
     called_up: boolean;
     participated: boolean;
-    starter: boolean;
-    minutes_played: number;
   }>;
   recent_attendance: Array<{
     training_id: string;
@@ -67,7 +62,7 @@ export async function getPlayersOverview(teamId: string): Promise<PlayerOverview
       .eq("trainings.team_id", teamId),
     supabase
       .from("match_players")
-      .select("player_id, starter, minutes_played, matches!inner(team_id)")
+      .select("player_id, called_up, participated, matches!inner(team_id)")
       .eq("matches.team_id", teamId),
     supabase
       .from("match_player_positions")
@@ -76,7 +71,7 @@ export async function getPlayersOverview(teamId: string): Promise<PlayerOverview
   ]);
 
   type AttendanceRow = { player_id: string; status: "present" | "absent" | "late" | "unknown" };
-  type MatchRow = { player_id: string; starter: boolean; minutes_played: number };
+  type MatchRow = { player_id: string; called_up: boolean; participated: boolean };
   type PositionRow = { player_id: string; position: string };
 
   const attendanceByPlayer = new Map<string, { total: number; present: number }>();
@@ -89,12 +84,12 @@ export async function getPlayersOverview(teamId: string): Promise<PlayerOverview
     attendanceByPlayer.set(row.player_id, current);
   }
 
-  const matchByPlayer = new Map<string, { matches: number; starts: number; minutes: number }>();
+  const matchByPlayer = new Map<string, { matches: number; calledUp: number; participated: number }>();
   for (const row of (matchRows ?? []) as MatchRow[]) {
-    const current = matchByPlayer.get(row.player_id) ?? { matches: 0, starts: 0, minutes: 0 };
+    const current = matchByPlayer.get(row.player_id) ?? { matches: 0, calledUp: 0, participated: 0 };
     current.matches += 1;
-    current.starts += row.starter ? 1 : 0;
-    current.minutes += row.minutes_played ?? 0;
+    current.calledUp += row.called_up ? 1 : 0;
+    current.participated += row.participated ? 1 : 0;
     matchByPlayer.set(row.player_id, current);
   }
 
@@ -109,7 +104,7 @@ export async function getPlayersOverview(teamId: string): Promise<PlayerOverview
     const attendance = attendanceByPlayer.get(player.id) ?? { total: 0, present: 0 };
     const attendancePercent = attendance.total > 0 ? round((attendance.present / attendance.total) * 100) : 0;
 
-    const match = matchByPlayer.get(player.id) ?? { matches: 0, starts: 0, minutes: 0 };
+    const match = matchByPlayer.get(player.id) ?? { matches: 0, calledUp: 0, participated: 0 };
 
     const positionMap = positionsByPlayer.get(player.id) ?? new Map<string, number>();
     const commonPosition =
@@ -119,8 +114,8 @@ export async function getPlayersOverview(teamId: string): Promise<PlayerOverview
       ...player,
       attendance_percent: attendancePercent,
       matches_total: match.matches,
-      starts_total: match.starts,
-      minutes_total: match.minutes,
+      called_up_total: match.calledUp,
+      participated_total: match.participated,
       common_position: commonPosition,
     };
   });
@@ -149,7 +144,7 @@ export async function getPlayerDetails(teamId: string, playerId: string): Promis
       .order("training_id", { ascending: false }),
     supabase
       .from("match_players")
-      .select("match_id, called_up, participated, starter, minutes_played, matches!inner(date, opponent, team_id)")
+      .select("match_id, called_up, participated, matches!inner(date, opponent, team_id)")
       .eq("player_id", playerId)
       .eq("matches.team_id", teamId),
     supabase
@@ -173,8 +168,6 @@ export async function getPlayerDetails(teamId: string, playerId: string): Promis
     match_id: string;
     called_up: boolean;
     participated: boolean;
-    starter: boolean;
-    minutes_played: number;
     matches: { date: string; opponent: string } | Array<{ date: string; opponent: string }>;
   };
   type PositionJoinRow = {
@@ -191,9 +184,6 @@ export async function getPlayerDetails(teamId: string, playerId: string): Promis
 
   const calledUpTotal = matches.filter((row) => row.called_up).length;
   const participatedTotal = matches.filter((row) => row.participated).length;
-  const startsTotal = matches.filter((row) => row.starter).length;
-  const minutesTotal = matches.reduce((total, row) => total + (row.minutes_played ?? 0), 0);
-  const avgMinutesPerMatch = participatedTotal > 0 ? round(minutesTotal / participatedTotal) : 0;
 
   const positionMap = new Map<string, number>();
   for (const row of positions) {
@@ -213,8 +203,6 @@ export async function getPlayerDetails(teamId: string, playerId: string): Promis
         opponent: match?.opponent ?? "",
         called_up: row.called_up,
         participated: row.participated,
-        starter: row.starter,
-        minutes_played: row.minutes_played ?? 0,
       };
     })
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -238,10 +226,7 @@ export async function getPlayerDetails(teamId: string, playerId: string): Promis
     trainings_total: trainingsTotal,
     called_up_total: calledUpTotal,
     participated_total: participatedTotal,
-    starts_total: startsTotal,
     green_cards_total: greenCardsCount ?? 0,
-    minutes_total: minutesTotal,
-    avg_minutes_per_match: avgMinutesPerMatch,
     position_breakdown: positionBreakdown,
     recent_matches: recentMatches,
     recent_attendance: recentAttendance,

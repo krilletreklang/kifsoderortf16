@@ -23,12 +23,9 @@ export interface MatchPlayerMetric {
   jersey_number: number | null;
   called_up: boolean;
   participated: boolean;
-  starter: boolean;
-  minutes_played: number;
   recent_matches_played: number;
   total_matches_played: number;
   last_played_date: string | null;
-  minutes_total: number;
   attendance_percent: number;
   score: number;
   reason: string;
@@ -112,11 +109,11 @@ export async function getMatchDetail(teamId: string, matchId: string, suggestedC
         .order("first_name", { ascending: true }),
       supabase
         .from("match_players")
-        .select("player_id, called_up, participated, starter, minutes_played")
+        .select("player_id, called_up, participated")
         .eq("match_id", matchId),
       supabase
         .from("match_players")
-        .select("match_id, player_id, participated, minutes_played, matches!inner(id, date, status, team_id)")
+        .select("match_id, player_id, participated, matches!inner(id, date, status, team_id)")
         .eq("matches.team_id", teamId),
       supabase
         .from("matches")
@@ -146,7 +143,6 @@ export async function getMatchDetail(teamId: string, matchId: string, suggestedC
     match_id: string;
     player_id: string;
     participated: boolean;
-    minutes_played: number;
     matches: { id: string; date: string; status: string } | Array<{ id: string; date: string; status: string }>;
   };
 
@@ -173,26 +169,13 @@ export async function getMatchDetail(teamId: string, matchId: string, suggestedC
     attendanceByPlayer.set(row.player_id, current);
   }
 
-  const selectionMap = new Map<string, { called_up: boolean; participated: boolean; starter: boolean; minutes_played: number }>();
+  const selectionMap = new Map<string, { called_up: boolean; participated: boolean }>();
   for (const row of selectionRows ?? []) {
     selectionMap.set(row.player_id, {
       called_up: row.called_up,
       participated: row.participated,
-      starter: row.starter,
-      minutes_played: row.minutes_played ?? 0,
     });
   }
-
-  const minutesTotals = new Map<string, number>();
-  for (const row of allRows) {
-    if (!row.participated) continue;
-    minutesTotals.set(row.player_id, (minutesTotals.get(row.player_id) ?? 0) + (row.minutes_played ?? 0));
-  }
-
-  const averageMinutes =
-    minutesTotals.size > 0
-      ? Array.from(minutesTotals.values()).reduce((sum, value) => sum + value, 0) / minutesTotals.size
-      : 0;
 
   const players: MatchPlayerMetric[] = (roster ?? []).map((player) => {
     const rows = allRows.filter((row) => row.player_id === player.id);
@@ -209,27 +192,21 @@ export async function getMatchDetail(teamId: string, matchId: string, suggestedC
       .filter(Boolean)
       .sort((a, b) => b.localeCompare(a))[0] ?? null;
 
-    const minutesTotal = minutesTotals.get(player.id) ?? 0;
     const attendanceStats = attendanceByPlayer.get(player.id) ?? { present: 0, total: 0 };
     const attendancePercent = attendanceStats.total > 0 ? round((attendanceStats.present / attendanceStats.total) * 100) : 0;
     const playedLastMatch = !!(lastCompletedMatchId && rows.some((row) => row.match_id === lastCompletedMatchId && row.participated));
 
     const recentNeed = Math.max(0, 5 - recentMatchesPlayed);
-    const minuteNeed = Math.max(0, averageMinutes - minutesTotal);
-    const score = round(recentNeed * 4 + minuteNeed * 0.08 + (playedLastMatch ? -2 : 2) + attendancePercent * 0.02);
+    const score = round(recentNeed * 4 + (playedLastMatch ? -2 : 2) + attendancePercent * 0.02);
 
     let reason = `Spelat ${recentMatchesPlayed} av senaste ${Math.max(1, recentIds.length)} matcher`;
-    if (minuteNeed > 25) {
-      reason = `Har ${Math.round(minuteNeed)} färre spelminuter än lagets snitt`;
-    } else if (!playedLastMatch) {
+    if (!playedLastMatch) {
       reason = "Spelade inte senaste matchen";
     }
 
     const current = selectionMap.get(player.id) ?? {
       called_up: false,
       participated: false,
-      starter: false,
-      minutes_played: 0,
     };
 
     return {
@@ -239,12 +216,9 @@ export async function getMatchDetail(teamId: string, matchId: string, suggestedC
       jersey_number: player.jersey_number,
       called_up: current.called_up,
       participated: current.participated,
-      starter: current.starter,
-      minutes_played: current.minutes_played,
       recent_matches_played: recentMatchesPlayed,
       total_matches_played: totalMatchesPlayed,
       last_played_date: lastPlayedDate,
-      minutes_total: minutesTotal,
       attendance_percent: attendancePercent,
       score,
       reason,

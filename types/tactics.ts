@@ -40,6 +40,7 @@ export interface TacticsBoardRecord {
   id: string;
   name: string;
   board_type: BoardType;
+  reference_image_url?: string | null;
   data: TacticsBoardData;
   created_at: string;
   updated_at: string;

@@ -17,7 +17,7 @@ export default async function DrillsPage() {
   const supabase = await createClient();
   const { data: drills } = await supabase
     .from("drills")
-    .select("id, title, category, duration, players_min, players_max, equipment")
+    .select("id, title, category, duration, players_min, players_max, equipment, video_url, image_url")
     .eq("team_id", membership.team_id)
     .order("title", { ascending: true });
 
@@ -33,6 +33,10 @@ export default async function DrillsPage() {
           <input name="playersMin" type="number" min={1} max={30} placeholder="Min spelare" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
           <input name="playersMax" type="number" min={1} max={30} placeholder="Max spelare" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
           <input name="equipment" placeholder="Material" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-5" />
+          <input name="videoUrl" placeholder="Video-URL (.mp4)" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-3" />
+          <input name="imageUrl" placeholder="Bild-URL (taktikbild)" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-3" />
+          <input name="videoFile" type="file" accept="video/mp4" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 py-2 text-foreground md:col-span-3" />
+          <input name="imageFile" type="file" accept="image/png,image/jpeg,image/webp" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 py-2 text-foreground md:col-span-3" />
           <Button type="submit">Spara övning</Button>
         </form>
       </Card>
@@ -54,6 +58,15 @@ export default async function DrillsPage() {
                     <p className="text-xs text-muted">
                       {drill.category} · {drill.duration ?? "-"} min · {drill.players_min ?? "-"}-{drill.players_max ?? "-"} spelare · {drill.equipment ?? "Inget material"}
                     </p>
+                    {drill.video_url ? (
+                      <video controls preload="metadata" className="mt-2 max-h-44 w-full max-w-md rounded-md border border-border bg-black/30">
+                        <source src={drill.video_url} type="video/mp4" />
+                      </video>
+                    ) : null}
+                    {drill.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={drill.image_url} alt={`Taktikbild för ${drill.title}`} className="mt-2 max-h-52 w-full max-w-md rounded-md border border-border object-cover" />
+                    ) : null}
                   </div>
                   <form action={deleteDrillAction}>
                     <input type="hidden" name="drillId" value={drill.id} />
