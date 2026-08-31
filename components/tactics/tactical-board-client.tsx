@@ -1,11 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormSubmitButton } from "@/components/ui/form-submit-button";
+import { uploadTeamMediaFromBrowser } from "@/lib/media/upload-client";
 import type { TacticsBoardRecord, TacticsRosterPlayer } from "@/types/tactics";
 
 interface TacticalBoardClientProps {
+  teamId: string;
   boards: TacticsBoardRecord[];
   roster: TacticsRosterPlayer[];
   selectedBoardId?: string;
@@ -19,6 +24,7 @@ interface TacticalBoardClientProps {
 }
 
 export function TacticalBoardClient({
+  teamId,
   boards,
   selectedBoardId,
   onCreateBoard,
@@ -26,14 +32,84 @@ export function TacticalBoardClient({
   onSaveReferenceImage,
   onDeleteBoard,
 }: TacticalBoardClientProps) {
+  const router = useRouter();
   const selected = selectedBoardId ? boards.find((board) => board.id === selectedBoardId) : boards[0];
+  const [creating, setCreating] = useState(false);
+  const [savingMedia, setSavingMedia] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function uploadTacticsMedia(
+    formData: FormData,
+    options: { allowMissingBoardId: boolean },
+  ) {
+    const imageFile = formData.get("imageFile");
+    if (imageFile instanceof File && imageFile.size > 0) {
+      if (!["image/png", "image/jpeg", "image/webp"].includes(imageFile.type)) {
+        throw new Error("Bild måste vara PNG, JPG eller WEBP.");
+      }
+      const imageUrl = await uploadTeamMediaFromBrowser(teamId, "tactics/images", imageFile);
+      formData.set("imageUrl", imageUrl);
+    }
+
+    const videoFile = formData.get("videoFile");
+    if (videoFile instanceof File && videoFile.size > 0) {
+      if (videoFile.type !== "video/mp4") {
+        throw new Error("Video måste vara .mp4.");
+      }
+      const videoUrl = await uploadTeamMediaFromBrowser(teamId, "tactics/videos", videoFile);
+      formData.set("videoUrl", videoUrl);
+    }
+
+    formData.delete("imageFile");
+    formData.delete("videoFile");
+
+    if (!options.allowMissingBoardId) {
+      const boardId = formData.get("boardId");
+      if (!boardId || String(boardId).length === 0) {
+        throw new Error("Ingen vald media-post att uppdatera.");
+      }
+    }
+  }
+
+  async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setUploadError(null);
+    setCreating(true);
+    try {
+      const formData = new FormData(event.currentTarget);
+      await uploadTacticsMedia(formData, { allowMissingBoardId: true });
+      await onCreateBoard(formData);
+      router.refresh();
+      event.currentTarget.reset();
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : "Kunde inte ladda upp media.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleSaveMedia(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setUploadError(null);
+    setSavingMedia(true);
+    try {
+      const formData = new FormData(event.currentTarget);
+      await uploadTacticsMedia(formData, { allowMissingBoardId: false });
+      await onSaveReferenceImage(formData);
+      router.refresh();
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : "Kunde inte uppdatera media.");
+    } finally {
+      setSavingMedia(false);
+    }
+  }
 
   return (
     <div className="space-y-4 lg:space-y-6">
       <Card>
         <h2 className="text-2xl text-foreground">Taktikmedia</h2>
         <p className="mt-1 text-sm text-muted">Ladda upp bilder och mp4-klipp till laget och visa dem direkt i mobilen.</p>
-        <form action={onCreateBoard} encType="multipart/form-data" className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <form onSubmit={handleCreate} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
           <input
             name="name"
             required
@@ -45,7 +121,8 @@ export function TacticalBoardClient({
           <input name="videoUrl" placeholder="Video-URL .mp4 (valfritt)" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
           <input name="imageFile" type="file" accept="image/png,image/jpeg,image/webp" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 py-2 text-foreground" />
           <input name="videoFile" type="file" accept="video/mp4" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 py-2 text-foreground" />
-          <FormSubmitButton pendingText="Laddar upp..." successText="Sparat" className="md:col-span-2">Ladda upp media</FormSubmitButton>
+          <Button type="submit" disabled={creating} className="md:col-span-2">{creating ? "Laddar upp..." : "Ladda upp media"}</Button>
+          {uploadError ? <p className="text-sm text-red-300 md:col-span-2">{uploadError}</p> : null}
         </form>
       </Card>
 
@@ -96,7 +173,7 @@ export function TacticalBoardClient({
                 <FormSubmitButton pendingText="Sparar..." successText="Sparat" variant="secondary" className="h-10">Spara rubrik</FormSubmitButton>
               </form>
 
-              <form action={onSaveReferenceImage} encType="multipart/form-data" className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <form onSubmit={handleSaveMedia} className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                 <input type="hidden" name="boardId" value={selected.id} />
                 <input
                   name="imageUrl"
@@ -112,9 +189,10 @@ export function TacticalBoardClient({
                 />
                 <input name="imageFile" type="file" accept="image/png,image/jpeg,image/webp" className="h-10 rounded-lg border border-border bg-panel-elevated px-3 py-2 text-xs text-foreground" />
                 <input name="videoFile" type="file" accept="video/mp4" className="h-10 rounded-lg border border-border bg-panel-elevated px-3 py-2 text-xs text-foreground" />
-                <FormSubmitButton pendingText="Sparar media..." successText="Sparat" variant="secondary" className="md:col-span-2">
-                  Spara media
-                </FormSubmitButton>
+                <Button type="submit" disabled={savingMedia} variant="secondary" className="md:col-span-2">
+                  {savingMedia ? "Sparar media..." : "Spara media"}
+                </Button>
+                {uploadError ? <p className="text-sm text-red-300 md:col-span-2">{uploadError}</p> : null}
               </form>
 
               <form action={onSaveReferenceImage} className="mt-2">

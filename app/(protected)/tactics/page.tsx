@@ -30,6 +30,7 @@ export default async function TacticsPage({ searchParams }: TacticsPageProps) {
   return (
     <TacticalBoardClient
       key={params.boardId ?? boards[0]?.id ?? "no-board"}
+      teamId={membership.team_id}
       boards={boards}
       roster={roster}
       selectedBoardId={params.boardId}

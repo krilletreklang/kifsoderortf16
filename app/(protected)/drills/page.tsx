@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { DrillCreateForm } from "@/components/drills/drill-create-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FormSubmitButton } from "@/components/ui/form-submit-button";
 import { requireUser } from "@/lib/auth/session";
@@ -26,19 +27,7 @@ export default async function DrillsPage() {
       <Card>
         <h2 className="text-2xl text-foreground">Ny övning</h2>
         <p className="mt-1 text-sm text-muted">Bygg upp ert övningsbibliotek med rätt nivå och material.</p>
-        <form action={createDrillAction} encType="multipart/form-data" className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-6">
-          <input name="title" required placeholder="Titel" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-2" />
-          <input name="category" required placeholder="Kategori" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
-          <input name="duration" type="number" min={1} max={120} placeholder="Minuter" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
-          <input name="playersMin" type="number" min={1} max={30} placeholder="Min spelare" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
-          <input name="playersMax" type="number" min={1} max={30} placeholder="Max spelare" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
-          <input name="equipment" placeholder="Material" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-5" />
-          <input name="videoUrl" placeholder="Video-URL (.mp4)" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-3" />
-          <input name="imageUrl" placeholder="Bild-URL (taktikbild)" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-3" />
-          <input name="videoFile" type="file" accept="video/mp4" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 py-2 text-foreground md:col-span-3" />
-          <input name="imageFile" type="file" accept="image/png,image/jpeg,image/webp" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 py-2 text-foreground md:col-span-3" />
-          <FormSubmitButton pendingText="Sparar övning...">Spara övning</FormSubmitButton>
-        </form>
+        <DrillCreateForm teamId={membership.team_id} onCreateDrill={createDrillAction} />
       </Card>
 
       <Card>
