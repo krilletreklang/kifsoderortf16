@@ -33,7 +33,7 @@ export async function getTacticsPageData(teamId: string): Promise<{
   const [{ data: boards }, { data: roster }] = await Promise.all([
     supabase
       .from("tactical_boards")
-      .select("id, name, board_type, reference_image_url, data, created_at, updated_at")
+      .select("id, name, board_type, reference_image_url, reference_video_url, data, created_at, updated_at")
       .eq("team_id", teamId)
       .order("updated_at", { ascending: false }),
     supabase

@@ -41,6 +41,7 @@ export interface TacticsBoardRecord {
   name: string;
   board_type: BoardType;
   reference_image_url?: string | null;
+  reference_video_url?: string | null;
   data: TacticsBoardData;
   created_at: string;
   updated_at: string;

@@ -26,7 +26,7 @@ export default async function DrillsPage() {
       <Card>
         <h2 className="text-2xl text-foreground">Ny övning</h2>
         <p className="mt-1 text-sm text-muted">Bygg upp ert övningsbibliotek med rätt nivå och material.</p>
-        <form action={createDrillAction} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-6">
+        <form action={createDrillAction} encType="multipart/form-data" className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-6">
           <input name="title" required placeholder="Titel" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-2" />
           <input name="category" required placeholder="Kategori" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
           <input name="duration" type="number" min={1} max={120} placeholder="Minuter" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />

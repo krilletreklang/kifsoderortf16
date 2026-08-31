@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { requireUser } from "@/lib/auth/session";
 import { getTacticsPageData } from "@/lib/db/queries/tactics";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
-import { clearBoardAction, createBoardAction, duplicateBoardAction, renameBoardAction, saveBoardAction, saveReferenceImageAction } from "./actions";
+import { clearBoardAction, createBoardAction, deleteBoardAction, duplicateBoardAction, renameBoardAction, saveBoardAction, saveReferenceImageAction } from "./actions";
 
 interface TacticsPageProps {
   searchParams: Promise<{
@@ -39,6 +39,7 @@ export default async function TacticsPage({ searchParams }: TacticsPageProps) {
       onDuplicateBoard={duplicateBoardAction}
       onClearBoard={clearBoardAction}
       onSaveReferenceImage={saveReferenceImageAction}
+      onDeleteBoard={deleteBoardAction}
     />
   );
 }

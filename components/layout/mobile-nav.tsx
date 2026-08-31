@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Gauge, LayoutGrid, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, CalendarDays, ClipboardList, Drill, Gauge, LayoutGrid, ShieldCheck, Users } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const mobileNavigation = [
   { href: "/", label: "Hem", icon: Gauge },
   { href: "/players", label: "Spelare", icon: Users },
-  { href: "/trainings", label: "Träning", icon: CalendarDays },
+  { href: "/trainings", label: "Träningar", icon: CalendarDays },
+  { href: "/training-plans", label: "Planer", icon: ClipboardList },
+  { href: "/drills", label: "Övningar", icon: Drill },
   { href: "/matches", label: "Matcher", icon: ShieldCheck },
   { href: "/tactics", label: "Taktik", icon: LayoutGrid },
+  { href: "/statistics", label: "Statistik", icon: BarChart3 },
 ] as const;
 
 export function MobileNav() {
@@ -18,11 +21,11 @@ export function MobileNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-panel/95 px-2 pb-2 pt-2 backdrop-blur lg:hidden">
-      <ul className="grid grid-cols-5 gap-1">
+      <ul className="flex gap-1 overflow-x-auto pb-1">
         {mobileNavigation.map((item) => {
           const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
           return (
-            <li key={item.href}>
+            <li key={item.href} className="min-w-[78px] shrink-0">
               <Link
                 href={item.href}
                 className={cn(

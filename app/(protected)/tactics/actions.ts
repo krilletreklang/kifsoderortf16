@@ -14,6 +14,8 @@ const boardTypeSchema = z.enum(["7v7", "9v9", "training", "custom"]);
 const createBoardSchema = z.object({
   name: z.string().min(2).max(80),
   boardType: boardTypeSchema,
+  imageUrl: z.string().url().nullable(),
+  videoUrl: z.string().url().nullable(),
 });
 
 const boardIdSchema = z.object({
@@ -39,6 +41,11 @@ const clearBoardSchema = z.object({
 const saveReferenceImageSchema = z.object({
   boardId: z.string().uuid(),
   imageUrl: z.string().url().nullable(),
+  videoUrl: z.string().url().nullable(),
+});
+
+const deleteBoardSchema = z.object({
+  boardId: z.string().uuid(),
 });
 
 async function getMembership() {
@@ -63,11 +70,12 @@ function sanitizeFileName(name: string) {
 async function uploadReferenceImage(
   supabase: Awaited<ReturnType<typeof createClient>>,
   teamId: string,
+  folder: "images" | "videos",
   file: File,
 ) {
   const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
   const safeExt = (ext || "bin").toLowerCase();
-  const path = `${teamId}/tactics/images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${sanitizeFileName(safeExt)}`;
+  const path = `${teamId}/tactics/${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${sanitizeFileName(safeExt)}`;
 
   const { error } = await supabase.storage.from("team-media").upload(path, file, {
     upsert: true,
@@ -89,6 +97,8 @@ export async function createBoardAction(formData: FormData) {
   const parsed = createBoardSchema.safeParse({
     name: normalizeName(formData.get("name")),
     boardType: String(formData.get("boardType") ?? "custom"),
+    imageUrl: nullableString(formData.get("imageUrl")),
+    videoUrl: nullableString(formData.get("videoUrl")),
   });
 
   if (!parsed.success) {
@@ -97,6 +107,28 @@ export async function createBoardAction(formData: FormData) {
 
   const supabase = await createClient();
   const template = createBoardTemplate(parsed.data.boardType as BoardType);
+  let imageUrl = parsed.data.imageUrl;
+  let videoUrl = parsed.data.videoUrl;
+
+  const imageFile = formData.get("imageFile");
+  if (imageFile instanceof File && imageFile.size > 0) {
+    if (["image/png", "image/jpeg", "image/webp"].includes(imageFile.type)) {
+      const uploaded = await uploadReferenceImage(supabase, membership.team_id, "images", imageFile);
+      if (uploaded) {
+        imageUrl = uploaded;
+      }
+    }
+  }
+
+  const videoFile = formData.get("videoFile");
+  if (videoFile instanceof File && videoFile.size > 0) {
+    if (videoFile.type === "video/mp4") {
+      const uploaded = await uploadReferenceImage(supabase, membership.team_id, "videos", videoFile);
+      if (uploaded) {
+        videoUrl = uploaded;
+      }
+    }
+  }
 
   const { data } = await supabase
     .from("tactical_boards")
@@ -104,6 +136,8 @@ export async function createBoardAction(formData: FormData) {
       team_id: membership.team_id,
       name: parsed.data.name,
       board_type: parsed.data.boardType,
+      reference_image_url: imageUrl,
+      reference_video_url: videoUrl,
       data: template,
     })
     .select("id")
@@ -252,6 +286,7 @@ export async function saveReferenceImageAction(formData: FormData) {
   const parsed = saveReferenceImageSchema.safeParse({
     boardId: String(formData.get("boardId") ?? ""),
     imageUrl: nullableString(formData.get("imageUrl")),
+    videoUrl: nullableString(formData.get("videoUrl")),
   });
 
   if (!parsed.success) {
@@ -260,23 +295,57 @@ export async function saveReferenceImageAction(formData: FormData) {
 
   const supabase = await createClient();
   let imageUrl = parsed.data.imageUrl;
+  let videoUrl = parsed.data.videoUrl;
 
   const imageFile = formData.get("imageFile");
   if (imageFile instanceof File && imageFile.size > 0) {
     if (["image/png", "image/jpeg", "image/webp"].includes(imageFile.type)) {
-      const uploaded = await uploadReferenceImage(supabase, membership.team_id, imageFile);
+      const uploaded = await uploadReferenceImage(supabase, membership.team_id, "images", imageFile);
       if (uploaded) {
         imageUrl = uploaded;
       }
     }
   }
 
+  const videoFile = formData.get("videoFile");
+  if (videoFile instanceof File && videoFile.size > 0) {
+    if (videoFile.type === "video/mp4") {
+      const uploaded = await uploadReferenceImage(supabase, membership.team_id, "videos", videoFile);
+      if (uploaded) {
+        videoUrl = uploaded;
+      }
+    }
+  }
+
   await supabase
     .from("tactical_boards")
-    .update({ reference_image_url: imageUrl })
+    .update({ reference_image_url: imageUrl, reference_video_url: videoUrl })
     .eq("id", parsed.data.boardId)
     .eq("team_id", membership.team_id);
 
   revalidatePath("/tactics");
   redirect(`/tactics?boardId=${parsed.data.boardId}`);
+}
+
+export async function deleteBoardAction(formData: FormData) {
+  const membership = await getMembership();
+  if (!membership) return;
+
+  const parsed = deleteBoardSchema.safeParse({
+    boardId: String(formData.get("boardId") ?? ""),
+  });
+
+  if (!parsed.success) {
+    return;
+  }
+
+  const supabase = await createClient();
+  await supabase
+    .from("tactical_boards")
+    .delete()
+    .eq("id", parsed.data.boardId)
+    .eq("team_id", membership.team_id);
+
+  revalidatePath("/tactics");
+  redirect("/tactics");
 }
