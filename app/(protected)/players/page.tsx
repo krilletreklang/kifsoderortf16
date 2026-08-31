@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FormSubmitButton } from "@/components/ui/form-submit-button";
 import { requireUser } from "@/lib/auth/session";
 import { getPlayersOverview } from "@/lib/db/queries/players";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
@@ -75,9 +75,7 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
             placeholder="Anteckning (valfritt)"
             className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent md:col-span-5"
           />
-          <Button type="submit" className="w-full md:w-auto">
-            Spara spelare
-          </Button>
+          <FormSubmitButton pendingText="Sparar spelare..." className="w-full md:w-auto">Spara spelare</FormSubmitButton>
         </form>
       </Card>
 
@@ -103,9 +101,9 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
                     </div>
                     <form action={deletePlayerAction}>
                       <input type="hidden" name="playerId" value={player.id} />
-                      <Button type="submit" variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
+                      <FormSubmitButton pendingText="Tar bort..." variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
                         Ta bort
-                      </Button>
+                      </FormSubmitButton>
                     </form>
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted">
@@ -152,9 +150,9 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
                       <td className="px-2 py-3">
                         <form action={deletePlayerAction}>
                           <input type="hidden" name="playerId" value={player.id} />
-                          <Button type="submit" variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
+                          <FormSubmitButton pendingText="Tar bort..." variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
                             Ta bort
-                          </Button>
+                          </FormSubmitButton>
                         </form>
                       </td>
                     </tr>

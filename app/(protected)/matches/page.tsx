@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FormSubmitButton } from "@/components/ui/form-submit-button";
 import { requireUser } from "@/lib/auth/session";
 import { getMatchesOverview } from "@/lib/db/queries/matches";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
@@ -63,7 +63,7 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
             <option value="training_game">Internmatch</option>
           </select>
           <input name="notes" placeholder="Anteckning" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-5" />
-          <Button type="submit" className="w-full md:w-auto">Spara match</Button>
+          <FormSubmitButton pendingText="Sparar match..." className="w-full md:w-auto">Spara match</FormSubmitButton>
         </form>
       </Card>
 
@@ -93,9 +93,9 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
                         </div>
                         <form action={deleteMatchAction}>
                           <input type="hidden" name="matchId" value={match.id} />
-                          <Button type="submit" variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
+                          <FormSubmitButton pendingText="Tar bort..." variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
                             Ta bort
-                          </Button>
+                          </FormSubmitButton>
                         </form>
                       </div>
                     </div>
@@ -135,9 +135,9 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
                         </div>
                         <form action={deleteMatchAction}>
                           <input type="hidden" name="matchId" value={match.id} />
-                          <Button type="submit" variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
+                          <FormSubmitButton pendingText="Tar bort..." variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
                             Ta bort
-                          </Button>
+                          </FormSubmitButton>
                         </form>
                       </div>
                     </div>

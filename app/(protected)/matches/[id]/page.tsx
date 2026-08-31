@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FormSubmitButton } from "@/components/ui/form-submit-button";
 import { requireUser } from "@/lib/auth/session";
 import { getMatchDetail } from "@/lib/db/queries/matches";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
@@ -66,7 +66,7 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
             <option value="completed">Spelad</option>
             <option value="cancelled">Inställd</option>
           </select>
-          <Button type="submit" variant="secondary" className="h-10 md:col-span-2">Spara matchresultat</Button>
+          <FormSubmitButton pendingText="Sparar resultat..." successText="Sparat" variant="secondary" className="h-10 md:col-span-2">Spara matchresultat</FormSubmitButton>
         </form>
 
         <form action={saveGreenCardAction} className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-4">
@@ -83,7 +83,7 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
               </option>
             ))}
           </select>
-          <Button type="submit" variant="secondary" className="h-10">Spara grönt kort</Button>
+          <FormSubmitButton pendingText="Sparar kort..." successText="Sparat" variant="secondary" className="h-10">Spara grönt kort</FormSubmitButton>
         </form>
       </Card>
 
@@ -96,7 +96,7 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
         <form method="get" className="mt-3 flex flex-wrap items-center gap-2">
           <label htmlFor="suggested" className="text-sm text-muted">Föreslå lagstorlek</label>
           <input id="suggested" name="suggested" type="number" min={1} max={20} defaultValue={detail.summary.suggested_count} className="h-9 w-24 rounded-md border border-border bg-panel-elevated px-2 text-sm text-foreground" />
-          <Button type="submit" className="h-9 px-3 text-xs">Föreslå lag</Button>
+          <FormSubmitButton pendingText="Uppdaterar..." className="h-9 px-3 text-xs">Föreslå lag</FormSubmitButton>
         </form>
 
         <ul className="mt-3 space-y-3 md:hidden">
@@ -120,17 +120,17 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
                   <input type="hidden" name="matchId" value={detail.match.id} />
                   <input type="hidden" name="playerId" value={player.player_id} />
                   <input type="hidden" name="value" value={player.called_up ? "false" : "true"} />
-                  <Button type="submit" variant={player.called_up ? "primary" : "secondary"} className="h-8 w-full px-2 text-xs">
+                  <FormSubmitButton pendingText="Sparar..." variant={player.called_up ? "primary" : "secondary"} className="h-8 w-full px-2 text-xs">
                     {player.called_up ? "Kallad" : "Kalla"}
-                  </Button>
+                  </FormSubmitButton>
                 </form>
                 <form action={toggleParticipatedAction}>
                   <input type="hidden" name="matchId" value={detail.match.id} />
                   <input type="hidden" name="playerId" value={player.player_id} />
                   <input type="hidden" name="value" value={player.participated ? "false" : "true"} />
-                  <Button type="submit" variant={player.participated ? "primary" : "secondary"} className="h-8 w-full px-2 text-xs">
-                    {player.participated ? "Spelar" : "Ej"}
-                  </Button>
+                  <FormSubmitButton pendingText="Sparar..." variant={player.participated ? "primary" : "secondary"} className="h-8 w-full px-2 text-xs">
+                    {player.participated ? "Spelade" : "Ej spelat"}
+                  </FormSubmitButton>
                 </form>
               </div>
             </li>
@@ -167,9 +167,9 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
                       <input type="hidden" name="matchId" value={detail.match.id} />
                       <input type="hidden" name="playerId" value={player.player_id} />
                       <input type="hidden" name="value" value={player.called_up ? "false" : "true"} />
-                      <Button type="submit" variant={player.called_up ? "primary" : "secondary"} className="h-8 px-2 text-xs">
+                      <FormSubmitButton pendingText="Sparar..." variant={player.called_up ? "primary" : "secondary"} className="h-8 px-2 text-xs">
                         {player.called_up ? "Kallad" : "Kalla"}
-                      </Button>
+                      </FormSubmitButton>
                     </form>
                   </td>
                   <td className="px-2 py-3">
@@ -177,9 +177,9 @@ export default async function MatchDetailsPage({ params, searchParams }: MatchDe
                       <input type="hidden" name="matchId" value={detail.match.id} />
                       <input type="hidden" name="playerId" value={player.player_id} />
                       <input type="hidden" name="value" value={player.participated ? "false" : "true"} />
-                      <Button type="submit" variant={player.participated ? "primary" : "secondary"} className="h-8 px-2 text-xs">
+                      <FormSubmitButton pendingText="Sparar..." variant={player.participated ? "primary" : "secondary"} className="h-8 px-2 text-xs">
                         {player.participated ? "Spelade" : "Ej spelat"}
-                      </Button>
+                      </FormSubmitButton>
                     </form>
                   </td>
                 </tr>

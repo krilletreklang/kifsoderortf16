@@ -6,6 +6,7 @@ import { DndContext, PointerSensor, type DragEndEvent, useDraggable, useSensor, 
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { FormSubmitButton } from "@/components/ui/form-submit-button";
 import type {
   ArrowType,
   BoardType,
@@ -148,7 +149,7 @@ export function TacticalBoardClient({
             <option value="training">Träningsövning</option>
             <option value="custom">Fri</option>
           </select>
-          <Button type="submit">Skapa tavla</Button>
+          <FormSubmitButton pendingText="Skapar...">Skapa tavla</FormSubmitButton>
         </form>
       </Card>
     );
@@ -336,7 +337,7 @@ export function TacticalBoardClient({
               <option value="training">Träningsövning</option>
               <option value="custom">Fri</option>
             </select>
-            <Button type="submit" className="md:col-span-1">Skapa</Button>
+            <FormSubmitButton pendingText="Skapar..." className="md:col-span-1">Skapa</FormSubmitButton>
           </form>
 
           <form action={onRenameBoard} className="contents">
@@ -347,7 +348,7 @@ export function TacticalBoardClient({
               onChange={(event) => setBoardName(event.target.value)}
               className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent md:col-span-2"
             />
-            <Button type="submit" variant="secondary">Byt namn</Button>
+            <FormSubmitButton pendingText="Sparar..." variant="secondary">Byt namn</FormSubmitButton>
           </form>
         </div>
       </Card>
@@ -594,12 +595,12 @@ export function TacticalBoardClient({
                 accept="image/png,image/jpeg,image/webp"
                 className="h-10 w-full rounded-lg border border-border bg-panel-elevated px-2 py-2 text-xs text-foreground"
               />
-              <Button type="submit" variant="secondary" className="h-9 w-full text-xs">Spara bild</Button>
+              <FormSubmitButton pendingText="Sparar bild..." variant="secondary" className="h-9 w-full text-xs">Spara bild</FormSubmitButton>
             </form>
             <form action={onSaveReferenceImage} className="mt-2">
               <input type="hidden" name="boardId" value={selectedBoard.id} />
               <input type="hidden" name="imageUrl" value="" />
-              <Button type="submit" variant="ghost" className="h-9 w-full text-xs">Ta bort bild</Button>
+              <FormSubmitButton pendingText="Tar bort..." variant="ghost" className="h-9 w-full text-xs">Ta bort bild</FormSubmitButton>
             </form>
           </div>
 
@@ -627,18 +628,18 @@ export function TacticalBoardClient({
             <input type="hidden" name="boardId" value={selectedBoard.id} />
             <input type="hidden" name="boardType" value={boardType} />
             <textarea name="data" value={serializedData} readOnly className="hidden" />
-            <Button type="submit" className="w-full">Spara tavla</Button>
+            <FormSubmitButton pendingText="Sparar tavla..." className="w-full">Spara tavla</FormSubmitButton>
           </form>
 
           <form action={onDuplicateBoard}>
             <input type="hidden" name="boardId" value={selectedBoard.id} />
-            <Button type="submit" variant="secondary" className="w-full">Duplicera tavla</Button>
+            <FormSubmitButton pendingText="Duplicerar..." variant="secondary" className="w-full">Duplicera tavla</FormSubmitButton>
           </form>
 
           <form action={onClearBoard}>
             <input type="hidden" name="boardId" value={selectedBoard.id} />
             <input type="hidden" name="boardType" value={boardType} />
-            <Button type="submit" variant="secondary" className="w-full">Rensa till template</Button>
+            <FormSubmitButton pendingText="Rensar..." variant="secondary" className="w-full">Rensa till template</FormSubmitButton>
           </form>
         </Card>
       </section>

@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FormSubmitButton } from "@/components/ui/form-submit-button";
 import { requireUser } from "@/lib/auth/session";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
 import { getTrainingAttendanceModel, type AttendanceStatus } from "@/lib/db/queries/trainings";
@@ -85,9 +85,7 @@ export default async function TrainingsPage({ searchParams }: TrainingsPageProps
           <input name="location" placeholder="Plats" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent md:col-span-2" />
           <input name="theme" placeholder="Tema" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent" />
           <input name="notes" placeholder="Anteckning" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground outline-none focus:border-accent md:col-span-5" />
-          <Button type="submit" className="w-full md:w-auto">
-            Spara träning
-          </Button>
+          <FormSubmitButton pendingText="Sparar träning..." className="w-full md:w-auto">Spara träning</FormSubmitButton>
         </form>
       </Card>
 
@@ -119,9 +117,9 @@ export default async function TrainingsPage({ searchParams }: TrainingsPageProps
                         <div className="text-sm text-muted">{training.attendance_rate}%</div>
                         <form action={deleteTrainingAction}>
                           <input type="hidden" name="trainingId" value={training.id} />
-                          <Button type="submit" variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
+                          <FormSubmitButton pendingText="Tar bort..." variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
                             Ta bort
-                          </Button>
+                          </FormSubmitButton>
                         </form>
                       </div>
                     </div>
@@ -189,13 +187,9 @@ export default async function TrainingsPage({ searchParams }: TrainingsPageProps
                               <input type="hidden" name="trainingId" value={model.selected_training?.id} />
                               <input type="hidden" name="playerId" value={player.id} />
                               <input type="hidden" name="status" value={choice} />
-                              <Button
-                                type="submit"
-                                variant={active ? "primary" : "secondary"}
-                                className="h-9 w-full px-2 text-xs"
-                              >
+                              <FormSubmitButton pendingText="Sparar..." variant={active ? "primary" : "secondary"} className="h-9 w-full px-2 text-xs">
                                 {statusText(choice)}
-                              </Button>
+                              </FormSubmitButton>
                             </form>
                           );
                         })}
@@ -218,9 +212,9 @@ export default async function TrainingsPage({ searchParams }: TrainingsPageProps
               <form key={`bulk-${choice}`} action={setAllAttendanceStatusAction}>
                 <input type="hidden" name="trainingId" value={model.selected_training?.id} />
                 <input type="hidden" name="status" value={choice} />
-                <Button type="submit" variant={choice === "present" ? "primary" : "secondary"} className="h-9 px-3 text-xs">
+                <FormSubmitButton pendingText="Sparar..." variant={choice === "present" ? "primary" : "secondary"} className="h-9 px-3 text-xs">
                   Alla {statusText(choice).toLowerCase()}
-                </Button>
+                </FormSubmitButton>
               </form>
             ))}
           </div>

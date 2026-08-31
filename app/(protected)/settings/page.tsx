@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FormSubmitButton } from "@/components/ui/form-submit-button";
 import { requireUser } from "@/lib/auth/session";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
 import { clearTeamDataAction } from "./actions";
@@ -29,9 +29,9 @@ export default async function SettingsPage() {
           Teamet och coach-kopplingar behålls.
         </p>
         <form action={clearTeamDataAction} className="mt-4">
-          <Button type="submit" variant="secondary" className="text-red-200 hover:bg-[#3a1f1f]">
+          <FormSubmitButton pendingText="Rensar..." variant="secondary" className="text-red-200 hover:bg-[#3a1f1f]">
             Rensa all lagdata
-          </Button>
+          </FormSubmitButton>
         </form>
       </Card>
     </div>

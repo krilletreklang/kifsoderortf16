@@ -1,6 +1,6 @@
 import { LogOut } from "lucide-react";
 import { ClubLogo } from "@/components/ui/club-logo";
-import { Button } from "@/components/ui/button";
+import { FormSubmitButton } from "@/components/ui/form-submit-button";
 
 interface TopbarProps {
   title: string;
@@ -23,10 +23,10 @@ export function Topbar({ title, subtitle, userEmail, onLogout }: TopbarProps) {
         <div className="flex items-center gap-3">
           <p className="hidden text-sm text-muted sm:block">{userEmail}</p>
           <form action={onLogout}>
-            <Button type="submit" variant="secondary" className="gap-2">
+            <FormSubmitButton pendingText="Loggar ut..." variant="secondary" className="gap-2">
               <LogOut className="h-4 w-4" />
               <span className="hidden sm:inline">Logga ut</span>
-            </Button>
+            </FormSubmitButton>
           </form>
         </div>
       </div>

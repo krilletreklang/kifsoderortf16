@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FormSubmitButton } from "@/components/ui/form-submit-button";
 import { requireUser } from "@/lib/auth/session";
 import { getPrimaryTeamMembership } from "@/lib/db/queries/teams";
 import { createClient } from "@/lib/supabase/server";
@@ -37,7 +37,7 @@ export default async function DrillsPage() {
           <input name="imageUrl" placeholder="Bild-URL (taktikbild)" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-3" />
           <input name="videoFile" type="file" accept="video/mp4" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 py-2 text-foreground md:col-span-3" />
           <input name="imageFile" type="file" accept="image/png,image/jpeg,image/webp" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 py-2 text-foreground md:col-span-3" />
-          <Button type="submit">Spara övning</Button>
+          <FormSubmitButton pendingText="Sparar övning...">Spara övning</FormSubmitButton>
         </form>
       </Card>
 
@@ -70,9 +70,9 @@ export default async function DrillsPage() {
                   </div>
                   <form action={deleteDrillAction}>
                     <input type="hidden" name="drillId" value={drill.id} />
-                    <Button type="submit" variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
+                    <FormSubmitButton pendingText="Tar bort..." variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">
                       Ta bort
-                    </Button>
+                    </FormSubmitButton>
                   </form>
                 </div>
               </li>
