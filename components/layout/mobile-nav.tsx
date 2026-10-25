@@ -9,10 +9,10 @@ const mobileNavigation = [
   { href: "/", label: "Hem", icon: Gauge },
   { href: "/players", label: "Spelare", icon: Users },
   { href: "/trainings", label: "Träningar", icon: CalendarDays },
-  { href: "/training-plans", label: "Planer", icon: ClipboardList },
+  { href: "/training-plans", label: "Träningsplaner", icon: ClipboardList },
   { href: "/drills", label: "Övningar", icon: Drill },
   { href: "/matches", label: "Matcher", icon: ShieldCheck },
-  { href: "/tactics", label: "Taktik", icon: LayoutGrid },
+  { href: "/tactics", label: "Taktiktavla", icon: LayoutGrid },
   { href: "/statistics", label: "Statistik", icon: BarChart3 },
 ] as const;
 
@@ -25,11 +25,11 @@ export function MobileNav() {
         {mobileNavigation.map((item) => {
           const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
           return (
-            <li key={item.href} className="min-w-[78px] shrink-0">
+            <li key={item.href} className="min-w-[96px] shrink-0">
               <Link
                 href={item.href}
                 className={cn(
-                  "flex min-h-12 flex-col items-center justify-center rounded-md text-xs",
+                  "flex min-h-12 flex-col items-center justify-center rounded-md px-1 text-[11px] leading-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
                   active ? "bg-accent text-black" : "text-muted",
                 )}
               >

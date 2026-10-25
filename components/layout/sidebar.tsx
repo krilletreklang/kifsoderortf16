@@ -23,13 +23,13 @@ export function Sidebar() {
   return (
     <nav className="space-y-2">
         {navigation.map((item) => {
-          const active = pathname === item.href;
+          const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex h-11 items-center gap-3 rounded-lg px-3 text-sm transition-colors",
+                "flex h-11 items-center gap-3 rounded-lg px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
                 active ? "bg-accent text-black" : "text-muted hover:bg-panel-elevated hover:text-foreground",
               )}
             >

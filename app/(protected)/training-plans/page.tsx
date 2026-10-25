@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FormSubmitButton } from "@/components/ui/form-submit-button";
 import { requireUser } from "@/lib/auth/session";
@@ -51,19 +52,48 @@ export default async function TrainingPlansPage() {
     });
     sectionsByPlan.set(section.training_plan_id, current);
   }
+  const hasPlans = (plans?.length ?? 0) > 0;
+  const inputClassName =
+    "h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60";
 
   return (
     <div className="space-y-4 lg:space-y-6">
-      <Card>
-        <h2 className="text-2xl text-foreground">Ny träningsplan</h2>
-        <p className="mt-1 text-sm text-muted">Skapa passupplägg med mål och total tid.</p>
-        <form action={createTrainingPlanAction} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-6">
-          <input name="title" required placeholder="Rubrik" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-2" />
-          <input name="date" type="date" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
-          <input name="totalMinutes" type="number" min={0} max={180} placeholder="Total min" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground" />
-          <input name="objective" placeholder="Mål med passet" className="h-11 rounded-lg border border-border bg-panel-elevated px-3 text-foreground md:col-span-2" />
-          <FormSubmitButton pendingText="Sparar plan...">Spara plan</FormSubmitButton>
-        </form>
+      <Card className="max-w-4xl">
+        <details open={!hasPlans} className="group">
+          <summary className="cursor-pointer list-none">
+            <h2 className="text-2xl text-foreground">Ny träningsplan</h2>
+            <p className="mt-1 text-sm text-muted">Skapa passupplägg med mål och total tid.</p>
+          </summary>
+          <form action={createTrainingPlanAction} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-6">
+            <div className="md:col-span-2">
+              <label htmlFor="plan-title" className="mb-1 block text-sm text-muted">
+                Rubrik
+              </label>
+              <input id="plan-title" name="title" required autoComplete="off" placeholder="Inför match…" className={inputClassName} />
+            </div>
+            <div>
+              <label htmlFor="plan-date" className="mb-1 block text-sm text-muted">
+                Datum
+              </label>
+              <input id="plan-date" name="date" type="date" className={inputClassName} />
+            </div>
+            <div>
+              <label htmlFor="plan-total-minutes" className="mb-1 block text-sm text-muted">
+                Total tid (min)
+              </label>
+              <input id="plan-total-minutes" name="totalMinutes" type="number" inputMode="numeric" min={0} max={180} placeholder="90…" className={inputClassName} />
+            </div>
+            <div className="md:col-span-2">
+              <label htmlFor="plan-objective" className="mb-1 block text-sm text-muted">
+                Mål med passet
+              </label>
+              <input id="plan-objective" name="objective" autoComplete="off" placeholder="Förberedelse inför helgens match…" className={inputClassName} />
+            </div>
+            <FormSubmitButton pendingText="Sparar plan…" className="md:col-span-2 md:justify-self-start">
+              Spara plan
+            </FormSubmitButton>
+          </form>
+        </details>
       </Card>
 
       <Card>
@@ -77,72 +107,109 @@ export default async function TrainingPlansPage() {
           <ul className="space-y-2">
             {plans.map((plan) => (
               <li key={plan.id} className="rounded-lg border border-border bg-panel-elevated px-3 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-base font-semibold text-foreground">{plan.title}</p>
-                    <p className="text-xs text-muted">
-                      {(plan.date ? formatDate(plan.date) : "Datum saknas")} · {plan.total_minutes ?? 0} min · {plan.objective ?? "Mål saknas"}
-                    </p>
+                <details open className="group">
+                  <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="break-words text-base font-semibold text-foreground">{plan.title}</p>
+                      <p className="text-xs text-muted">
+                        {(plan.date ? formatDate(plan.date) : "Datum saknas")} · {plan.total_minutes ?? 0} min · {plan.objective ?? "Mål saknas"}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted group-open:hidden">Visa detaljer</span>
+                    <span className="hidden text-xs text-muted group-open:inline">Dölj detaljer</span>
+                  </summary>
+
+                  <div className="mt-3 space-y-3">
+                    <div className="flex justify-end">
+                      <form action={deleteTrainingPlanAction}>
+                        <input type="hidden" name="planId" value={plan.id} />
+                        <ConfirmSubmitButton
+                          confirmMessage={`Ta bort planen "${plan.title}"?`}
+                          pendingText="Tar bort…"
+                          variant="secondary"
+                          className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]"
+                        >
+                          Ta bort plan
+                        </ConfirmSubmitButton>
+                      </form>
+                    </div>
+
+                    <div className="rounded-md border border-border/60 bg-black/20 p-2">
+                      <p className="mb-2 text-xs text-muted">Lägg till övning från biblioteket</p>
+                      <form action={addDrillToTrainingPlanAction} className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_150px_auto]">
+                        <input type="hidden" name="planId" value={plan.id} />
+                        <div>
+                          <label htmlFor={`drill-select-${plan.id}`} className="mb-1 block text-xs text-muted">
+                            Övning
+                          </label>
+                          <select
+                            id={`drill-select-${plan.id}`}
+                            name="drillId"
+                            required
+                            disabled={!drills || drills.length === 0}
+                            className="h-9 w-full rounded-md border border-border bg-panel-elevated px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:opacity-50"
+                          >
+                            {!drills || drills.length === 0 ? <option value="">Inga övningar skapade</option> : null}
+                            {(drills ?? []).map((drill) => (
+                              <option key={`${plan.id}-${drill.id}`} value={drill.id}>
+                                {drill.title} · {drill.category} · {drill.duration ?? 0} min
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label htmlFor={`minutes-override-${plan.id}`} className="mb-1 block text-xs text-muted">
+                            Tid (min)
+                          </label>
+                          <input
+                            id={`minutes-override-${plan.id}`}
+                            name="minutesOverride"
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            max={180}
+                            autoComplete="off"
+                            placeholder="Valfritt…"
+                            className="h-9 w-full rounded-md border border-border bg-panel-elevated px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                          />
+                        </div>
+                        <FormSubmitButton pendingText="Lägger till…" variant="secondary" className="h-9 self-end px-3 text-xs" disabled={!drills || drills.length === 0}>
+                          Lägg till
+                        </FormSubmitButton>
+                      </form>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-xs text-muted">Övningar i planen</p>
+                      {((sectionsByPlan.get(plan.id) ?? []).length === 0) ? (
+                        <p className="text-xs text-muted">Inga övningar tillagda ännu.</p>
+                      ) : (
+                        <ul className="space-y-2">
+                          {(sectionsByPlan.get(plan.id) ?? []).map((section, index) => (
+                            <li key={section.id} className="flex items-start justify-between gap-2 rounded-md border border-border/60 bg-panel px-2 py-2">
+                              <div className="min-w-0">
+                                <p className="break-words text-sm font-medium text-foreground">{index + 1}. {section.title}</p>
+                                <p className="text-xs text-muted">{section.minutes} min · {section.equipment ?? "Inget material"}</p>
+                                {section.description ? <p className="break-words text-xs text-muted">{section.description}</p> : null}
+                              </div>
+                              <form action={deleteTrainingPlanSectionAction}>
+                                <input type="hidden" name="sectionId" value={section.id} />
+                                <ConfirmSubmitButton
+                                  confirmMessage={`Ta bort övningen "${section.title}" från planen?`}
+                                  pendingText="Tar bort…"
+                                  variant="ghost"
+                                  className="h-8 px-2 text-xs text-red-200"
+                                >
+                                  Ta bort
+                                </ConfirmSubmitButton>
+                              </form>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
-                  <form action={deleteTrainingPlanAction}>
-                    <input type="hidden" name="planId" value={plan.id} />
-                    <FormSubmitButton pendingText="Tar bort..." variant="secondary" className="h-8 px-2 text-xs text-red-200 hover:bg-[#3a1f1f]">Ta bort</FormSubmitButton>
-                  </form>
-                </div>
-
-                <div className="mt-3 rounded-md border border-border/60 bg-black/20 p-2">
-                  <p className="mb-2 text-xs text-muted">Lägg till övning från biblioteket</p>
-                  <form action={addDrillToTrainingPlanAction} className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_120px_auto]">
-                    <input type="hidden" name="planId" value={plan.id} />
-                    <select
-                      name="drillId"
-                      required
-                      disabled={!drills || drills.length === 0}
-                      className="h-9 rounded-md border border-border bg-panel-elevated px-2 text-sm text-foreground disabled:opacity-50"
-                    >
-                      {!drills || drills.length === 0 ? <option value="">Inga övningar skapade</option> : null}
-                      {(drills ?? []).map((drill) => (
-                        <option key={`${plan.id}-${drill.id}`} value={drill.id}>
-                          {drill.title} · {drill.category} · {drill.duration ?? 0} min
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      name="minutesOverride"
-                      type="number"
-                      min={0}
-                      max={180}
-                      placeholder="Min (valfritt)"
-                      className="h-9 rounded-md border border-border bg-panel-elevated px-2 text-sm text-foreground"
-                    />
-                    <FormSubmitButton pendingText="Lägger till..." variant="secondary" className="h-9 px-3 text-xs" disabled={!drills || drills.length === 0}>
-                      Lägg till
-                    </FormSubmitButton>
-                  </form>
-                </div>
-
-                <div className="mt-3">
-                  <p className="mb-2 text-xs text-muted">Övningar i planen</p>
-                  {((sectionsByPlan.get(plan.id) ?? []).length === 0) ? (
-                    <p className="text-xs text-muted">Inga övningar tillagda ännu.</p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {(sectionsByPlan.get(plan.id) ?? []).map((section, index) => (
-                        <li key={section.id} className="flex items-start justify-between gap-2 rounded-md border border-border/60 bg-panel px-2 py-2">
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{index + 1}. {section.title}</p>
-                            <p className="text-xs text-muted">{section.minutes} min · {section.equipment ?? "Inget material"}</p>
-                            {section.description ? <p className="text-xs text-muted">{section.description}</p> : null}
-                          </div>
-                          <form action={deleteTrainingPlanSectionAction}>
-                            <input type="hidden" name="sectionId" value={section.id} />
-                            <FormSubmitButton pendingText="Tar bort..." variant="ghost" className="h-8 px-2 text-xs text-red-200">Ta bort</FormSubmitButton>
-                          </form>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                </details>
               </li>
             ))}
           </ul>
