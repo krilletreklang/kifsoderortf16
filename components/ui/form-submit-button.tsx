@@ -11,7 +11,7 @@ interface FormSubmitButtonProps extends ComponentProps<typeof Button> {
 }
 
 export function FormSubmitButton({
-  pendingText = "Sparar...",
+  pendingText = "Sparar…",
   successText,
   idleContent,
   children,
